@@ -252,6 +252,11 @@ const config = {
       production: true,
       $default: true
     },
+    filterDeletedEmbeds: {
+      $filter: 'env',
+      production: true,
+      $default: true
+    },
     enablePolicies: {
       $filter: 'env',
       production: true,

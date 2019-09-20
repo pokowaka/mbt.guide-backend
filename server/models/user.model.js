@@ -1,7 +1,6 @@
 'use strict'
 
 const Bcrypt = require('bcryptjs')
-const GeneratePassword = require('password-generator')
 const RestHapi = require('rest-hapi')
 const errorHelper = require('../utilities/error-helper')
 
@@ -14,6 +13,17 @@ const Config = require('../../config')
 
 const enableDemoAuth = Config.get('/enableDemoAuth')
 const demoAuth = enableDemoAuth ? 'demoAuth' : null
+
+const USER_ROLES = Config.get('/constants/USER_ROLES')
+
+const admin = require('../../node_modules/firebase-admin')
+
+const serviceAccount = require('../../private-keys/mbt-guide-d9b1b-firebase-adminsdk-lcskb-0c3507c9e9.json')
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: 'https://mbt-guide-d9b1b.firebaseio.com'
+})
 
 module.exports = function(mongoose) {
   const modelName = 'user'
@@ -33,18 +43,6 @@ module.exports = function(mongoose) {
         required: true,
         stringType: 'email'
       },
-      title: {
-        type: Types.String
-      },
-      education: {
-        type: Types.String
-      },
-      location: {
-        type: Types.String
-      },
-      bio: {
-        type: Types.String
-      },
       profileImageUrl: {
         type: Types.String,
         stringType: 'uri'
@@ -63,63 +61,14 @@ module.exports = function(mongoose) {
         allowOnUpdate: false,
         default: true
       },
-      password: {
-        type: Types.String,
-        exclude: true,
-        allowOnUpdate: false
-      },
-      pin: {
-        type: Types.String,
-        exclude: true,
-        allowOnUpdate: false
-      },
-      facebookId: {
-        type: Types.String,
-        allowOnUpdate: false
-      },
-      googleId: {
-        type: Types.String,
-        allowOnUpdate: false
-      },
-      githubId: {
-        type: Types.String,
-        allowOnUpdate: false
-      },
       resetPassword: {
         hash: {
           type: Types.String
-        },
-        pinRequired: {
-          type: Types.Boolean
         },
         allowOnCreate: false,
         allowOnUpdate: false,
         exclude: true,
         type: Types.Object
-      },
-      activateAccountHash: {
-        allowOnCreate: false,
-        allowOnUpdate: false,
-        exclude: true,
-        type: Types.String
-      },
-      passwordUpdateRequired: {
-        type: Types.Boolean,
-        allowOnCreate: false,
-        allowOnUpdate: false,
-        default: false
-      },
-      pinUpdateRequired: {
-        type: Types.Boolean,
-        allowOnCreate: false,
-        allowOnUpdate: false,
-        default: false
-      },
-      socialLoginHash: {
-        allowOnCreate: false,
-        allowOnUpdate: false,
-        exclude: true,
-        type: Types.String
       }
     },
     { collection: modelName }
@@ -197,6 +146,12 @@ module.exports = function(mongoose) {
           foreignField: 'owner',
           model: 'document'
         },
+        segments: {
+          type: 'ONE_MANY',
+          alias: 'segment',
+          foreignField: 'owner',
+          model: 'segment'
+        },
         sharedDocuments: {
           type: 'MANY_MANY',
           alias: 'shared-document',
@@ -217,31 +172,6 @@ module.exports = function(mongoose) {
         }
       },
       create: {
-        pre: async function(payload, request, logger) {
-          const Log = logger.bind()
-          try {
-            if (!payload.password) {
-              payload.password = GeneratePassword(10, false)
-            }
-            if (!payload.pin) {
-              payload.pin = GeneratePassword(4, false, /\d/)
-            }
-
-            const promises = []
-
-            promises.push(
-              mongoose.model('user').generateHash(payload.password, Log)
-            )
-            promises.push(mongoose.model('user').generateHash(payload.pin, Log))
-            let result = await Promise.all(promises)
-            payload.password = result[0].hash
-            payload.pin = result[1].hash
-
-            return payload
-          } catch (err) {
-            errorHelper.handleError(err, Log)
-          }
-        },
         post: async function(document, request, result, logger) {
           const Log = logger.bind()
           try {
@@ -278,32 +208,51 @@ module.exports = function(mongoose) {
       }
     },
 
-    findByCredentials: async function(email, password, logger) {
+    findByToken: async function(idToken, server, logger) {
       const Log = logger.bind()
+
+      const Role = mongoose.model('role')
       try {
+        // TODO: handle invalid token
+        const firebaseUser = await admin.auth().verifyIdToken(idToken)
+
         const self = this
 
         const query = {
-          email: email.toLowerCase(),
-          isDeleted: false
+          email: firebaseUser.email
         }
 
         let mongooseQuery = self.findOne(query)
 
         let user = await mongooseQuery.lean()
 
+        // If user doesn't exist, create one
         if (!user) {
-          return false
+          const userRole = (await RestHapi.list(
+            Role,
+            { name: USER_ROLES.USER },
+            Log
+          )).docs[0]
+
+          const [firstName, lastName] = firebaseUser.name.split(' ')
+
+          user = {
+            firstName,
+            lastName,
+            email: firebaseUser.email,
+            profileImageUrl: firebaseUser.picture,
+            isActive: true,
+            role: userRole._id
+          }
+
+          user = await RestHapi.create({
+            model: 'user',
+            payload: user,
+            restCall: true
+          })
         }
 
-        const source = user.password
-
-        let passwordMatch = await Bcrypt.compare(password, source)
-        if (passwordMatch) {
-          return user
-        } else {
-          return false
-        }
+        return user
       } catch (err) {
         errorHelper.handleError(err, Log)
       }

@@ -16,10 +16,6 @@ module.exports = function(mongoose) {
       key: {
         type: Types.String,
         required: true
-      },
-      passwordHash: {
-        type: Types.String,
-        required: true
       }
     },
     { collection: modelName }
@@ -57,7 +53,6 @@ module.exports = function(mongoose) {
         const document = {
           user: user._id,
           key: Uuid.v4(),
-          passwordHash: user.password,
           createdAt: Date.now()
         }
 

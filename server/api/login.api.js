@@ -23,58 +23,18 @@ module.exports = function(server, mongoose, logger) {
   /// /////////////////////
   ;(function() {
     const Log = logger.bind(Chalk.magenta('Login'))
-    const AuthAttempt = mongoose.model('authAttempt')
     const Permission = mongoose.model('permission')
     const Session = mongoose.model('session')
     const User = mongoose.model('user')
 
     const loginPre = [
       {
-        assign: 'abuseDetected',
-        method: async function(request, h) {
-          try {
-            const ip = server.methods.getIP(request)
-            const email = request.payload.email
-
-            let detected = await AuthAttempt.abuseDetected(ip, email, Log)
-            if (detected) {
-              throw Boom.unauthorized(
-                'Maximum number of auth attempts reached. Please try again later.'
-              )
-            }
-
-            return h.continue
-          } catch (err) {
-            errorHelper.handleError(err, Log)
-          }
-        }
-      },
-      {
         assign: 'user',
         method: async function(request, h) {
           try {
-            const email = request.payload.email
-            const password = request.payload.password
+            const idToken = request.payload.idToken
 
-            return await User.findByCredentials(email, password, Log)
-          } catch (err) {
-            errorHelper.handleError(err, Log)
-          }
-        }
-      },
-      {
-        assign: 'logAttempt',
-        method: async function(request, h) {
-          try {
-            if (request.pre.user) {
-              return h.continue
-            }
-            const ip = server.methods.getIP(request)
-            const email = request.payload.email
-
-            await AuthAttempt.createInstance(ip, email, Log)
-
-            throw Boom.unauthorized('Invalid Email or Password.')
+            return await User.findByToken(idToken, server, Log)
           } catch (err) {
             errorHelper.handleError(err, Log)
           }
@@ -208,9 +168,6 @@ module.exports = function(server, mongoose, logger) {
       let accessToken = ''
       let response = {}
 
-      request.pre.user.password = ''
-      request.pre.user.pin = ''
-
       switch (authStrategy) {
         case AUTH_STRATEGIES.TOKEN:
           accessToken = request.pre.standardToken
@@ -258,11 +215,7 @@ module.exports = function(server, mongoose, logger) {
           tags: ['api', 'Login'],
           validate: {
             payload: {
-              email: Joi.string()
-                .email()
-                .lowercase()
-                .required(),
-              password: Joi.string().required()
+              idToken: Joi.string().required()
             }
           },
           pre: loginPre,

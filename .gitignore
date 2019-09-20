@@ -387,5 +387,7 @@ Temporary Items
 
 =======
 # Local
-dokcer-compose.yml
 .env
+private-keys
+
+node_modules

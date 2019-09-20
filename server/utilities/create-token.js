@@ -14,7 +14,6 @@ function createToken(user, session, scope, expirationPeriod, logger) {
         {
           sessionId: session._id,
           sessionKey: session.key,
-          passwordHash: session.passwordHash,
           scope: scope
         },
         Config.get('/jwtSecret'),

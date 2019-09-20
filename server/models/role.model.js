@@ -61,9 +61,6 @@ module.exports = function(mongoose) {
           linkingModel: 'role_permission'
         }
       }
-    },
-    test: function() {
-      console.log('TEST')
     }
   }
 

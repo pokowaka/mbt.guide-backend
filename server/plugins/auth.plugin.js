@@ -70,7 +70,7 @@ internals.applySessionStrategy = function(server) {
       const User = Mongoose.model('user')
 
       let session = {}
-      let { sessionId, sessionKey, passwordHash, scope } = decodedToken
+      let { sessionId, sessionKey, scope } = decodedToken
 
       try {
         session = await Session.findByCredentials(sessionId, sessionKey, Log)
@@ -81,10 +81,6 @@ internals.applySessionStrategy = function(server) {
         let user = await User.findById(session.user)
 
         if (!user) {
-          return { isValid: false }
-        }
-
-        if (user.password !== passwordHash) {
           return { isValid: false }
         }
 
@@ -168,10 +164,6 @@ internals.applyRefreshStrategy = function(server) {
           let user = await User.findById(session.user)
 
           if (!user) {
-            return { isValid: false }
-          }
-
-          if (user.password !== decodedToken.passwordHash) {
             return { isValid: false }
           }
 
