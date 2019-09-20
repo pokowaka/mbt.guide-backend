@@ -1,7 +1,7 @@
-var mongoose = require('mongoose')
+var mongoose = require('mongoose');
 
 module.exports = function() {
-  var Types = mongoose.Schema.Types
+  var Types = mongoose.Schema.Types;
 
   var Model = {
     Schema: {
@@ -10,11 +10,11 @@ module.exports = function() {
       hasRead: {
         type: Types.Boolean,
         required: true,
-        default: false
-      }
+        default: false,
+      },
     },
-    modelName: 'user_conversation'
-  }
+    modelName: 'user_conversation',
+  };
 
-  return Model
-}
+  return Model;
+};

@@ -1,11 +1,11 @@
-'use strict'
-const Confidence = require('confidence')
-const Config = require('./index')
-const RestHapi = require('rest-hapi')
+'use strict';
+const Confidence = require('confidence');
+const Config = require('./index');
+const RestHapi = require('rest-hapi');
 
 const criteria = {
-  env: process.env.NODE_ENV
-}
+  env: process.env.NODE_ENV,
+};
 
 const manifest = {
   $meta: 'This file defines the server.',
@@ -22,15 +22,15 @@ const manifest = {
     // }
     routes: {
       cors: {
-        origin: ['*']
+        origin: ['*'],
       },
       validate: {
         failAction: async (request, h, err) => {
-          RestHapi.logger.error(err)
-          throw err
-        }
-      }
-    }
+          RestHapi.logger.error(err);
+          throw err;
+        },
+      },
+    },
   },
   // connections: [
   //   {
@@ -40,33 +40,33 @@ const manifest = {
   register: {
     plugins: [
       {
-        plugin: 'hapi-auth-jwt2'
+        plugin: 'hapi-auth-jwt2',
       },
       {
-        plugin: 'bell'
+        plugin: 'bell',
       },
       {
-        plugin: './server/plugins/mailer.plugin'
+        plugin: './server/plugins/mailer.plugin',
       },
       {
-        plugin: './server/plugins/auth.plugin'
+        plugin: './server/plugins/auth.plugin',
       },
       {
-        plugin: './server/plugins/sockets.plugin'
+        plugin: './server/plugins/sockets.plugin',
       },
       {
-        plugin: './server/plugins/api.plugin'
-      }
-    ]
-  }
-}
+        plugin: './server/plugins/api.plugin',
+      },
+    ],
+  },
+};
 
-const store = new Confidence.Store(manifest)
+const store = new Confidence.Store(manifest);
 
 exports.get = function(key) {
-  return store.get(key, criteria)
-}
+  return store.get(key, criteria);
+};
 
 exports.meta = function(key) {
-  return store.meta(key, criteria)
-}
+  return store.meta(key, criteria);
+};

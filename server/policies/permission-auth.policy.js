@@ -1,10 +1,10 @@
-'use strict'
+'use strict';
 
-const Boom = require('boom')
-const RestHapi = require('rest-hapi')
-const errorHelper = require('../utilities/error-helper')
+const Boom = require('boom');
+const RestHapi = require('rest-hapi');
+const errorHelper = require('../utilities/error-helper');
 
-const internals = {}
+const internals = {};
 
 /**
  * Policy to enforce auth for assigning permissions.
@@ -14,106 +14,84 @@ const internals = {}
  */
 internals.permissionAuth = function(mongoose, isOwner) {
   const permissionAuth = async function permissionAuth(request, h) {
-    let Log = request.logger.bind('permissionAuth')
+    let Log = request.logger.bind('permissionAuth');
 
     try {
       // Return next if this isn't a permission association
       if (!isOwner && !request.path.includes('permission')) {
-        return h.continue
+        return h.continue;
       }
-      let userScope = request.auth.credentials.scope
+      let userScope = request.auth.credentials.scope;
 
       // Always allow root
       if (userScope.indexOf('root') > -1) {
-        return h.continue
+        return h.continue;
       }
 
       if (isOwner) {
-        let canAssign = await internals.canAssign(
-          request.params.ownerId,
-          userScope,
-          mongoose,
-          Log
-        )
-        return internals.formatResponse(canAssign, h, Log)
+        let canAssign = await internals.canAssign(request.params.ownerId, userScope, mongoose, Log);
+        return internals.formatResponse(canAssign, h, Log);
       } else if (request.params.childId) {
-        let canAssign = await internals.canAssign(
-          request.params.childId,
-          userScope,
-          mongoose,
-          Log
-        )
-        return internals.formatResponse(canAssign, h, Log)
+        let canAssign = await internals.canAssign(request.params.childId, userScope, mongoose, Log);
+        return internals.formatResponse(canAssign, h, Log);
       }
       // Multiple permissions are being assigned so we need to check each one.
       else {
-        const permissionIds = request.payload.map(
-          object => object.childId || object
-        )
-        let promises = []
+        const permissionIds = request.payload.map(object => object.childId || object);
+        let promises = [];
         permissionIds.forEach(permissionId =>
-          promises.push(
-            internals.canAssign(permissionId, userScope, mongoose, Log)
-          )
-        )
+          promises.push(internals.canAssign(permissionId, userScope, mongoose, Log))
+        );
 
-        let result = await Promise.all(promises)
+        let result = await Promise.all(promises);
         // If any of the checks fail, then an error is returned
-        let canAssign =
-          result.filter(canAssign => canAssign === false)[0] === undefined
+        let canAssign = result.filter(canAssign => canAssign === false)[0] === undefined;
 
-        return internals.formatResponse(canAssign, h, Log)
+        return internals.formatResponse(canAssign, h, Log);
       }
     } catch (err) {
-      errorHelper.handleError(err, Log)
+      errorHelper.handleError(err, Log);
     }
-  }
+  };
 
-  permissionAuth.applyPoint = 'onPreHandler'
-  return permissionAuth
-}
-internals.permissionAuth.applyPoint = 'onPreHandler'
+  permissionAuth.applyPoint = 'onPreHandler';
+  return permissionAuth;
+};
+internals.permissionAuth.applyPoint = 'onPreHandler';
 
-internals.canAssign = async function(
-  permissionId,
-  userScope,
-  mongoose,
-  logger
-) {
-  const Log = logger.bind()
+internals.canAssign = async function(permissionId, userScope, mongoose, logger) {
+  const Log = logger.bind();
 
   try {
-    const Permission = mongoose.model('permission')
+    const Permission = mongoose.model('permission');
 
-    let result = await RestHapi.find(Permission, permissionId, {}, Log)
-    let assignScope = result.assignScope
+    let result = await RestHapi.find(Permission, permissionId, {}, Log);
+    let assignScope = result.assignScope;
     // Check if the user scope intersects (contains values of) the assign scope.
-    let canAssign = !!userScope.filter(
-      scope => assignScope.indexOf(scope) > -1
-    )[0]
+    let canAssign = !!userScope.filter(scope => assignScope.indexOf(scope) > -1)[0];
 
-    return canAssign
+    return canAssign;
   } catch (err) {
-    errorHelper.handleError(err, Log)
+    errorHelper.handleError(err, Log);
   }
-}
+};
 
 internals.formatResponse = function(canAssign, h, logger) {
-  const Log = logger.bind()
+  const Log = logger.bind();
 
   try {
     if (canAssign.isBoom) {
-      throw canAssign
+      throw canAssign;
     }
 
     if (canAssign) {
-      return h.continue
+      return h.continue;
     } else {
-      throw Boom.forbidden('Higher role required to assign permission')
+      throw Boom.forbidden('Higher role required to assign permission');
     }
   } catch (err) {
-    errorHelper.handleError(err, Log)
+    errorHelper.handleError(err, Log);
   }
-}
+};
 
-module.exports = internals.permissionAuth
+module.exports = internals.permissionAuth;

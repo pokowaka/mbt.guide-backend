@@ -1,32 +1,32 @@
-'use strict'
+'use strict';
 
-const RestHapi = require('rest-hapi')
-const errorHelper = require('../utilities/error-helper')
+const RestHapi = require('rest-hapi');
+const errorHelper = require('../utilities/error-helper');
 
 module.exports = function(mongoose) {
-  var modelName = 'message'
-  var Types = mongoose.Schema.Types
+  var modelName = 'message';
+  var Types = mongoose.Schema.Types;
   var Schema = new mongoose.Schema(
     {
       text: {
         type: Types.String,
-        required: true
+        required: true,
       },
       conversation: {
         type: Types.ObjectId,
         ref: 'conversation',
         allowOnUpdate: false,
-        required: true
+        required: true,
       },
       user: {
         type: Types.ObjectId,
         ref: 'user',
         allowOnUpdate: false,
-        required: true
-      }
+        required: true,
+      },
     },
     { collection: modelName }
-  )
+  );
 
   Schema.statics = {
     collectionName: modelName,
@@ -38,29 +38,29 @@ module.exports = function(mongoose) {
       associations: {
         conversation: {
           type: 'MANY_ONE',
-          model: 'user'
-        }
+          model: 'user',
+        },
       },
       create: {
         post: async function(document, request, result, logger) {
-          const Log = logger.bind()
+          const Log = logger.bind();
           try {
-            const Conversation = mongoose.model('conversation')
+            const Conversation = mongoose.model('conversation');
             // Every new message is set as the latest message in the conversation
             await RestHapi.update(
               Conversation,
               document.conversation,
               { lastMessage: document._id },
               Log
-            )
-            return document
+            );
+            return document;
           } catch (err) {
-            errorHelper.handleError(err, Log)
+            errorHelper.handleError(err, Log);
           }
-        }
-      }
-    }
-  }
+        },
+      },
+    },
+  };
 
-  return Schema
-}
+  return Schema;
+};

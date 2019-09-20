@@ -1,18 +1,18 @@
-'use strict'
+'use strict';
 
-process.env.NODE_ENV = 'local'
+process.env.NODE_ENV = 'local';
 
-const updatePermissions = require('../utilities/update-permissions.utility')
+const updatePermissions = require('../utilities/update-permissions.utility');
 
 /**
  * A wrapper to run the update-permissions utility as a script.
  */
-;(async function() {
+(async function() {
   try {
-    await updatePermissions()
-    process.exit(0)
+    await updatePermissions();
+    process.exit(0);
   } catch (err) {
-    console.error(err)
-    process.exit(1)
+    console.error(err);
+    process.exit(1);
   }
-})()
+})();

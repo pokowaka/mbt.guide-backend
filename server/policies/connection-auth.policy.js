@@ -1,10 +1,10 @@
-'use strict'
+'use strict';
 
-const Boom = require('boom')
-const RestHapi = require('rest-hapi')
-const errorHelper = require('../utilities/error-helper')
+const Boom = require('boom');
+const RestHapi = require('rest-hapi');
+const errorHelper = require('../utilities/error-helper');
 
-const internals = {}
+const internals = {};
 
 /**
  * Policy to enforce auth for connection updates.
@@ -13,31 +13,31 @@ const internals = {}
  */
 internals.connectionUpdateAuth = function(mongoose) {
   const connectionUpdateAuth = async function connectionAuth(request, h) {
-    const Log = request.logger.bind('connectionAuth')
+    const Log = request.logger.bind('connectionAuth');
 
     try {
-      const Connection = mongoose.model('connection')
+      const Connection = mongoose.model('connection');
 
-      let userId = request.auth.credentials.user._id
+      let userId = request.auth.credentials.user._id;
 
-      let result = await RestHapi.find(Connection, request.params._id, {}, Log)
+      let result = await RestHapi.find(Connection, request.params._id, {}, Log);
       // Only the primary user and those with root permissions can update the connection
       if (
         userId === result.primaryUser.toString() ||
         request.auth.credentials.scope.includes('root')
       ) {
-        return h.continue
+        return h.continue;
       } else {
-        throw Boom.forbidden('Not primary user')
+        throw Boom.forbidden('Not primary user');
       }
     } catch (err) {
-      errorHelper.handleError(err, Log)
+      errorHelper.handleError(err, Log);
     }
-  }
+  };
 
-  connectionUpdateAuth.applyPoint = 'onPreHandler'
-  return connectionUpdateAuth
-}
-internals.connectionUpdateAuth.applyPoint = 'onPreHandler'
+  connectionUpdateAuth.applyPoint = 'onPreHandler';
+  return connectionUpdateAuth;
+};
+internals.connectionUpdateAuth.applyPoint = 'onPreHandler';
 
-module.exports = internals.connectionUpdateAuth
+module.exports = internals.connectionUpdateAuth;

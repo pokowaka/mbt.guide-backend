@@ -1,9 +1,9 @@
-'use strict'
+'use strict';
 
-const Boom = require('boom')
-const errorHelper = require('../utilities/error-helper')
+const Boom = require('boom');
+const errorHelper = require('../utilities/error-helper');
 
-const internals = {}
+const internals = {};
 
 /**
  * Policy to restrict certain action for the live demo (such as super admins deleting users).
@@ -12,14 +12,14 @@ const internals = {}
  * @returns {*}
  */
 internals.demoAuth = function(request, h) {
-  let Log = request.logger.bind('demoAuth')
+  let Log = request.logger.bind('demoAuth');
   try {
-    throw Boom.forbidden('Action not allowed for demo')
+    throw Boom.forbidden('Action not allowed for demo');
   } catch (err) {
-    errorHelper.handleError(err, Log)
+    errorHelper.handleError(err, Log);
   }
-}
-internals.demoAuth.applyPoint = 'onPreHandler'
+};
+internals.demoAuth.applyPoint = 'onPreHandler';
 
 /**
  * Policy to restrict certain action for the live demo (such as super admins deleting users).
@@ -28,21 +28,21 @@ internals.demoAuth.applyPoint = 'onPreHandler'
  * @returns {*}
  */
 internals.demoUser = async function(request, h) {
-  let Log = request.logger.bind('demoUser')
+  let Log = request.logger.bind('demoUser');
 
   try {
-    let user = request.auth.credentials.user
+    let user = request.auth.credentials.user;
 
     if (internals.demoUsers.includes(user.email)) {
-      throw Boom.forbidden('Cannot edit demo user')
+      throw Boom.forbidden('Cannot edit demo user');
     }
 
-    return h.continue
+    return h.continue;
   } catch (err) {
-    errorHelper.handleError(err, Log)
+    errorHelper.handleError(err, Log);
   }
-}
-internals.demoUser.applyPoint = 'onPreHandler'
+};
+internals.demoUser.applyPoint = 'onPreHandler';
 
 internals.demoUsers = [
   'test@superadmin.com',
@@ -51,10 +51,10 @@ internals.demoUsers = [
   'test@readonlyuser.com',
   'test@readonlyadmin.com',
   'test@editoradmin.com',
-  'test@superuseradmin.com'
-]
+  'test@superuseradmin.com',
+];
 
 module.exports = {
   demoAuth: internals.demoAuth,
-  demoUser: internals.demoUser
-}
+  demoUser: internals.demoUser,
+};

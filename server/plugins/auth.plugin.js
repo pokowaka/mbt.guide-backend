@@ -1,30 +1,30 @@
-'use strict'
+'use strict';
 
-const Mongoose = require('mongoose')
-const Boom = require('boom')
-const RestHapi = require('rest-hapi')
-const errorHelper = require('../utilities/error-helper')
+const Mongoose = require('mongoose');
+const Boom = require('boom');
+const RestHapi = require('rest-hapi');
+const errorHelper = require('../utilities/error-helper');
 
-const Config = require('../../config')
-const Token = require('../utilities/create-token')
+const Config = require('../../config');
+const Token = require('../utilities/create-token');
 
-const AUTH_STRATEGIES = Config.get('/constants/AUTH_STRATEGIES')
-const socialPassword = Config.get('/socialPassword')
-const socialIds = Config.get('/socialIds')
-const socialSecrets = Config.get('/socialSecrets')
-const EXPIRATION_PERIOD = Config.get('/constants/EXPIRATION_PERIOD')
-const isSecure = Config.get('/socialSecure')
+const AUTH_STRATEGIES = Config.get('/constants/AUTH_STRATEGIES');
+const socialPassword = Config.get('/socialPassword');
+const socialIds = Config.get('/socialIds');
+const socialSecrets = Config.get('/socialSecrets');
+const EXPIRATION_PERIOD = Config.get('/constants/EXPIRATION_PERIOD');
+const isSecure = Config.get('/socialSecure');
 
-const logger = RestHapi.getLogger('appy')
+const logger = RestHapi.getLogger('appy');
 
-const internals = {}
+const internals = {};
 
 module.exports = {
   plugin: {
     name: 'auth',
-    register
-  }
-}
+    register,
+  },
+};
 
 internals.applyTokenStrategy = function(server) {
   // const Log = logger.bind('auth/standard-jwt')
@@ -34,54 +34,54 @@ internals.applyTokenStrategy = function(server) {
     verifyOptions: { algorithms: ['HS256'] },
 
     validate: function(decodedToken, request, h) {
-      let { user, scope } = decodedToken
+      let { user, scope } = decodedToken;
 
       return {
         isValid: true,
-        credentials: { user, scope }
-      }
-    }
-  })
-}
+        credentials: { user, scope },
+      };
+    },
+  });
+};
 
 internals.applySessionStrategy = function(server) {
-  const Log = logger.bind('auth/session')
+  const Log = logger.bind('auth/session');
 
   server.ext('onPostHandler', function(request, h) {
-    const creds = request.auth.credentials
+    const creds = request.auth.credentials;
 
     // send a fresh token in the response
     if (creds && request.response.header) {
       request.response.header(
         'X-Access-Token',
         Token(null, creds.session, creds.scope, EXPIRATION_PERIOD.LONG, Log)
-      )
+      );
     }
 
-    return h.continue
-  })
+    return h.continue;
+  });
 
   server.auth.strategy(AUTH_STRATEGIES.SESSION, 'jwt', {
     key: Config.get('/jwtSecret'),
     verifyOptions: { algorithms: ['HS256'] },
 
     validate: async function(decodedToken, request, h) {
-      const Session = Mongoose.model('session')
-      const User = Mongoose.model('user')
+      const Session = Mongoose.model('session');
+      const User = Mongoose.model('user');
 
-      let session = {}
-      let { sessionId, sessionKey, scope } = decodedToken
+      let session = {};
+      let { sessionId, sessionKey, scope } = decodedToken;
 
       try {
-        session = await Session.findByCredentials(sessionId, sessionKey, Log)
+        session = await Session.findByCredentials(sessionId, sessionKey, Log);
         if (!session) {
-          return { isValid: false }
+          return { isValid: false };
         }
 
-        let user = await User.findById(session.user)
+        let user = await User.findById(session.user);
 
         if (!user) {
-          return { isValid: false }
+          return { isValid: false };
         }
 
         return {
@@ -89,36 +89,36 @@ internals.applySessionStrategy = function(server) {
           credentials: {
             user,
             session,
-            scope
-          }
-        }
+            scope,
+          },
+        };
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
-    }
-  })
-}
+    },
+  });
+};
 
 internals.applyRefreshStrategy = function(server) {
-  const Log = logger.bind('auth/refresh')
+  const Log = logger.bind('auth/refresh');
 
   server.ext('onPostHandler', function(request, h) {
-    const creds = request.auth.credentials
+    const creds = request.auth.credentials;
 
     // if the auth credentials contain session info (i.e. a refresh token), respond with a fresh set of tokens in the header.
     if (creds && creds.session && request.response.header) {
       request.response.header(
         'X-Access-Token',
         Token(creds.user, null, creds.scope, EXPIRATION_PERIOD.SHORT, Log)
-      )
+      );
       request.response.header(
         'X-Refresh-Token',
         Token(null, creds.session, creds.scope, EXPIRATION_PERIOD.LONG, Log)
-      )
+      );
     }
 
-    return h.continue
-  })
+    return h.continue;
+  });
 
   server.auth.strategy(AUTH_STRATEGIES.REFRESH, 'jwt', {
     key: Config.get('/jwtSecret'),
@@ -128,43 +128,43 @@ internals.applyRefreshStrategy = function(server) {
         // if the token is expired, respond with token type so the client can switch to refresh token if necessary
         if (decodedToken.exp < Math.floor(Date.now() / 1000)) {
           if (decodedToken.user) {
-            throw Boom.unauthorized('Expired Access Token', 'Token', null)
+            throw Boom.unauthorized('Expired Access Token', 'Token', null);
           } else {
-            throw Boom.unauthorized('Expired Refresh Token', 'Token', null)
+            throw Boom.unauthorized('Expired Refresh Token', 'Token', null);
           }
         }
 
-        let user = {}
-        let session = {}
+        let user = {};
+        let session = {};
 
         // If the token does not contain session info, then simply authenticate and continue
         if (decodedToken.user) {
-          user = decodedToken.user
+          user = decodedToken.user;
 
           return {
             isValid: true,
-            credentials: { user, scope: decodedToken.scope }
-          }
+            credentials: { user, scope: decodedToken.scope },
+          };
         }
         // If the token does contain session info (i.e. a refresh token), then use the session to
         // authenticate and respond with a fresh set of tokens in the header
         else if (decodedToken.sessionId) {
-          const Session = Mongoose.model('session')
-          const User = Mongoose.model('user')
+          const Session = Mongoose.model('session');
+          const User = Mongoose.model('user');
 
           session = await Session.findByCredentials(
             decodedToken.sessionId,
             decodedToken.sessionKey,
             Log
-          )
+          );
           if (!session) {
-            return { isValid: false }
+            return { isValid: false };
           }
 
-          let user = await User.findById(session.user)
+          let user = await User.findById(session.user);
 
           if (!user) {
-            return { isValid: false }
+            return { isValid: false };
           }
 
           return {
@@ -172,16 +172,16 @@ internals.applyRefreshStrategy = function(server) {
             credentials: {
               user,
               session,
-              scope: decodedToken.scope
-            }
-          }
+              scope: decodedToken.scope,
+            },
+          };
         }
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
-    }
-  })
-}
+    },
+  });
+};
 
 internals.applyFacebookStrategy = function(server) {
   const facebookOptions = {
@@ -190,12 +190,12 @@ internals.applyFacebookStrategy = function(server) {
     clientId: socialIds.facebook,
     clientSecret: socialSecrets.facebook,
     forceHttps: isSecure,
-    isSecure // Should be set to true (which is the default) in production
-  }
+    isSecure, // Should be set to true (which is the default) in production
+  };
 
   // Setup the social Facebook login strategy
-  server.auth.strategy('facebook', 'bell', facebookOptions)
-}
+  server.auth.strategy('facebook', 'bell', facebookOptions);
+};
 
 internals.applyGoogleStrategy = function(server) {
   const googleOptions = {
@@ -204,12 +204,12 @@ internals.applyGoogleStrategy = function(server) {
     clientId: socialIds.google,
     clientSecret: socialSecrets.google,
     forceHttps: isSecure,
-    isSecure // Should be set to true (which is the default) in production
-  }
+    isSecure, // Should be set to true (which is the default) in production
+  };
 
   // Setup the social Google login strategy
-  server.auth.strategy('google', 'bell', googleOptions)
-}
+  server.auth.strategy('google', 'bell', googleOptions);
+};
 
 internals.applyGithubStrategy = function(server) {
   const googleOptions = {
@@ -218,16 +218,16 @@ internals.applyGithubStrategy = function(server) {
     clientId: socialIds.github,
     clientSecret: socialSecrets.github,
     forceHttps: isSecure,
-    isSecure // Should be set to true (which is the default) in production
-  }
+    isSecure, // Should be set to true (which is the default) in production
+  };
 
   // Setup the social GitHub login strategy
-  server.auth.strategy('github', 'bell', googleOptions)
-}
+  server.auth.strategy('github', 'bell', googleOptions);
+};
 
 internals.customForbiddenMessage = function(server) {
   server.ext('onPreResponse', (request, h) => {
-    const response = request.response
+    const response = request.response;
 
     if (
       response.output &&
@@ -235,34 +235,34 @@ internals.customForbiddenMessage = function(server) {
       response.output.payload &&
       response.output.payload.message === 'Insufficient scope'
     ) {
-      response.output.payload.message = 'Insufficient permissions'
+      response.output.payload.message = 'Insufficient permissions';
     }
 
-    return h.continue
-  })
-}
+    return h.continue;
+  });
+};
 
 async function register(server, options) {
-  const authStrategy = Config.get('/restHapiConfig/authStrategy')
+  const authStrategy = Config.get('/restHapiConfig/authStrategy');
 
-  internals.customForbiddenMessage(server)
+  internals.customForbiddenMessage(server);
 
-  internals.applyFacebookStrategy(server)
-  internals.applyGoogleStrategy(server)
-  internals.applyGithubStrategy(server)
+  internals.applyFacebookStrategy(server);
+  internals.applyGoogleStrategy(server);
+  internals.applyGithubStrategy(server);
 
   switch (authStrategy) {
     case AUTH_STRATEGIES.TOKEN:
-      internals.applyTokenStrategy(server)
-      break
+      internals.applyTokenStrategy(server);
+      break;
     case AUTH_STRATEGIES.SESSION:
-      internals.applySessionStrategy(server)
-      break
+      internals.applySessionStrategy(server);
+      break;
     case AUTH_STRATEGIES.REFRESH:
-      internals.applyRefreshStrategy(server)
-      break
+      internals.applyRefreshStrategy(server);
+      break;
     default:
-      break
+      break;
   }
 
   // Add helper method to get request ip
@@ -273,7 +273,7 @@ async function register(server, options) {
       request.headers['x-real-ip'] ||
       request.headers['x-forwarded-for'] ||
       request.info.remoteAddress
-    )
-  }
-  server.method('getIP', getIP, {})
+    );
+  };
+  server.method('getIP', getIP, {});
 }

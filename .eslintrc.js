@@ -10,8 +10,8 @@ module.exports = {
     browser: true,
   },
   // https://github.com/feross/standard/blob/master/RULES.md#javascript-standard-style
-  extends: ['prettier-standard'],
-  plugins: ['prettier'],
+  extends: ['plugin:prettier/recommended'],
+  // plugins: ['prettier'],
   // add your custom rules here
   rules: {
     // allow paren-less arrow functions

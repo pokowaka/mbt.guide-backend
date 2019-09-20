@@ -1,51 +1,51 @@
-'use strict'
+'use strict';
 
 module.exports = function(mongoose) {
-  var modelName = 'visitor'
-  var Types = mongoose.Schema.Types
+  var modelName = 'visitor';
+  var Types = mongoose.Schema.Types;
   var Schema = new mongoose.Schema(
     {
       ip: {
         type: Types.String,
-        required: true
+        required: true,
       },
       browser: {
         type: Types.String,
-        required: true
+        required: true,
       },
       country_code: {
-        type: Types.String
+        type: Types.String,
       },
       country_name: {
-        type: Types.String
+        type: Types.String,
       },
       region_code: {
-        type: Types.String
+        type: Types.String,
       },
       region_name: {
-        type: Types.String
+        type: Types.String,
       },
       city: {
-        type: Types.String
+        type: Types.String,
       },
       zip_code: {
-        type: Types.String
+        type: Types.String,
       },
       time_zone: {
-        type: Types.String
+        type: Types.String,
       },
       latitude: {
-        type: Types.Number
+        type: Types.Number,
       },
       longitude: {
-        type: Types.Number
+        type: Types.Number,
       },
       metro_code: {
-        type: Types.Number
-      }
+        type: Types.Number,
+      },
     },
     { collection: modelName }
-  )
+  );
 
   Schema.statics = {
     collectionName: modelName,
@@ -54,9 +54,9 @@ module.exports = function(mongoose) {
       associations: {},
       allowCreate: false,
       allowUpdate: false,
-      allowDelete: false
-    }
-  }
+      allowDelete: false,
+    },
+  };
 
-  return Schema
-}
+  return Schema;
+};

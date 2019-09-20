@@ -1,31 +1,29 @@
-'use strict'
+'use strict';
 
-const Joi = require('joi')
-const Boom = require('boom')
-const Chalk = require('chalk')
-const _ = require('lodash')
-const zxcvbn = require('zxcvbn')
-const RestHapi = require('rest-hapi')
-const errorHelper = require('../utilities/error-helper')
+const Joi = require('joi');
+const Boom = require('boom');
+const Chalk = require('chalk');
+const _ = require('lodash');
+const zxcvbn = require('zxcvbn');
+const RestHapi = require('rest-hapi');
+const errorHelper = require('../utilities/error-helper');
 
-const Config = require('../../config')
-const auditLog = require('../policies/audit-log.policy')
+const Config = require('../../config');
+const auditLog = require('../policies/audit-log.policy');
 
-const USER_ROLES = Config.get('/constants/USER_ROLES')
-const REQUIRED_PASSWORD_STRENGTH = Config.get(
-  '/constants/REQUIRED_PASSWORD_STRENGTH'
-)
-const authStrategy = Config.get('/restHapiConfig/authStrategy')
+const USER_ROLES = Config.get('/constants/USER_ROLES');
+const REQUIRED_PASSWORD_STRENGTH = Config.get('/constants/REQUIRED_PASSWORD_STRENGTH');
+const authStrategy = Config.get('/restHapiConfig/authStrategy');
 
-const rankAuth = require('../policies/role-auth.policy').rankAuth
+const rankAuth = require('../policies/role-auth.policy').rankAuth;
 
-const enableDemoAuth = Config.get('/enableDemoAuth')
-const demoAuth = enableDemoAuth ? 'demoAuth' : null
-const demoUser = enableDemoAuth ? 'demoUser' : null
+const enableDemoAuth = Config.get('/enableDemoAuth');
+const demoAuth = enableDemoAuth ? 'demoAuth' : null;
+const demoUser = enableDemoAuth ? 'demoUser' : null;
 
 const headersValidation = Joi.object({
-  authorization: Joi.string().required()
-}).options({ allowUnknown: true })
+  authorization: Joi.string().required(),
+}).options({ allowUnknown: true });
 
 module.exports = function(server, mongoose, logger) {
   // Check Email Endpoint
@@ -33,28 +31,28 @@ module.exports = function(server, mongoose, logger) {
   // as to why, refer to the links below:
   // https://postmarkapp.com/guides/password-reset-email-best-practices
   // https://security.stackexchange.com/questions/40694/disclose-to-user-if-account-exists
-  ;(function() {
-    const Log = logger.bind(Chalk.magenta('Check Email'))
-    const User = mongoose.model('user')
+  (function() {
+    const Log = logger.bind(Chalk.magenta('Check Email'));
+    const User = mongoose.model('user');
 
-    const collectionName = User.collectionDisplayName || User.modelName
+    const collectionName = User.collectionDisplayName || User.modelName;
 
-    Log.note('Generating Check Email endpoint for ' + collectionName)
+    Log.note('Generating Check Email endpoint for ' + collectionName);
 
     const checkEmailHandler = async function(request, h) {
       try {
-        let result = await User.findOne({ email: request.payload.email })
+        let result = await User.findOne({ email: request.payload.email });
         if (result) {
-          Log.log('Email already exists.')
-          return true
+          Log.log('Email already exists.');
+          return true;
         } else {
-          Log.log("Email doesn't exist.")
-          return false
+          Log.log("Email doesn't exist.");
+          return false;
         }
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
-    }
+    };
 
     server.route({
       method: 'POST',
@@ -66,8 +64,8 @@ module.exports = function(server, mongoose, logger) {
         tags: ['api', 'User', 'Check Email'],
         validate: {
           payload: {
-            email: Joi.string().required()
-          }
+            email: Joi.string().required(),
+          },
         },
         plugins: {
           'hapi-swagger': {
@@ -75,37 +73,35 @@ module.exports = function(server, mongoose, logger) {
               { code: 200, message: 'Success' },
               { code: 400, message: 'Bad Request' },
               { code: 404, message: 'Not Found' },
-              { code: 500, message: 'Internal Server Error' }
-            ]
-          }
-        }
-      }
-    })
-  })()
+              { code: 500, message: 'Internal Server Error' },
+            ],
+          },
+        },
+      },
+    });
+  })();
 
   // Check Password Strength Endpoint
-  ;(function() {
-    const Log = logger.bind(Chalk.magenta('Check Password Strength'))
-    const User = mongoose.model('user')
+  (function() {
+    const Log = logger.bind(Chalk.magenta('Check Password Strength'));
+    const User = mongoose.model('user');
 
-    const collectionName = User.collectionDisplayName || User.modelName
+    const collectionName = User.collectionDisplayName || User.modelName;
 
-    Log.note(
-      'Generating Check Password Strength endpoint for ' + collectionName
-    )
+    Log.note('Generating Check Password Strength endpoint for ' + collectionName);
 
     const checkPasswordHandler = async function(request, h) {
       try {
-        const results = zxcvbn(request.payload.password)
+        const results = zxcvbn(request.payload.password);
 
         return {
           score: results.score,
-          suggestions: results.feedback.suggestions
-        }
+          suggestions: results.feedback.suggestions,
+        };
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
-    }
+    };
 
     server.route({
       method: 'POST',
@@ -117,8 +113,8 @@ module.exports = function(server, mongoose, logger) {
         tags: ['api', 'User', 'Check Password Strength'],
         validate: {
           payload: {
-            password: Joi.string().allow('')
-          }
+            password: Joi.string().allow(''),
+          },
         },
         plugins: {
           'hapi-swagger': {
@@ -126,89 +122,83 @@ module.exports = function(server, mongoose, logger) {
               { code: 200, message: 'Success' },
               { code: 400, message: 'Bad Request' },
               { code: 404, message: 'Not Found' },
-              { code: 500, message: 'Internal Server Error' }
-            ]
-          }
-        }
-      }
-    })
-  })()
+              { code: 500, message: 'Internal Server Error' },
+            ],
+          },
+        },
+      },
+    });
+  })();
 
   // Update Current User Password Endpoint
-  ;(function() {
-    const Log = logger.bind(Chalk.magenta('Update Current User Password'))
-    const User = mongoose.model('user')
+  (function() {
+    const Log = logger.bind(Chalk.magenta('Update Current User Password'));
+    const User = mongoose.model('user');
 
-    const collectionName = User.collectionDisplayName || User.modelName
+    const collectionName = User.collectionDisplayName || User.modelName;
 
-    Log.note(
-      'Generating Update Current User Password endpoint for ' + collectionName
-    )
+    Log.note('Generating Update Current User Password endpoint for ' + collectionName);
 
     const updateCurrentUserPasswordPre = [
       {
         assign: 'passwordCheck',
         method: async function(request, h) {
           try {
-            const results = zxcvbn(request.payload.password)
+            const results = zxcvbn(request.payload.password);
 
-            let requiredPasswordStrength = 4
+            let requiredPasswordStrength = 4;
 
             switch (request.auth.credentials.user.roleName) {
               case USER_ROLES.USER:
-                requiredPasswordStrength = REQUIRED_PASSWORD_STRENGTH.USER
-                break
+                requiredPasswordStrength = REQUIRED_PASSWORD_STRENGTH.USER;
+                break;
               case USER_ROLES.ADMIN:
-                requiredPasswordStrength = REQUIRED_PASSWORD_STRENGTH.ADMIN
-                break
+                requiredPasswordStrength = REQUIRED_PASSWORD_STRENGTH.ADMIN;
+                break;
               case USER_ROLES.SUPER_ADMIN:
-                requiredPasswordStrength =
-                  REQUIRED_PASSWORD_STRENGTH.SUPER_ADMIN
-                break
+                requiredPasswordStrength = REQUIRED_PASSWORD_STRENGTH.SUPER_ADMIN;
+                break;
             }
 
             if (results.score < requiredPasswordStrength) {
-              throw Boom.badRequest('Stronger password required.')
+              throw Boom.badRequest('Stronger password required.');
             }
-            return h.continue
+            return h.continue;
           } catch (err) {
-            errorHelper.handleError(err, Log)
+            errorHelper.handleError(err, Log);
           }
-        }
+        },
       },
       {
         assign: 'password',
         method: async function(request, h) {
           try {
-            let hashedPassword = await User.generateHash(
-              request.payload.password,
-              Log
-            )
-            return hashedPassword
+            let hashedPassword = await User.generateHash(request.payload.password, Log);
+            return hashedPassword;
           } catch (err) {
-            errorHelper.handleError(err, Log)
+            errorHelper.handleError(err, Log);
           }
-        }
-      }
-    ]
+        },
+      },
+    ];
 
     const updateCurrentUserPasswordHandler = async function(request, h) {
       try {
-        const _id = request.auth.credentials.user._id
+        const _id = request.auth.credentials.user._id;
 
         return await RestHapi.update(
           User,
           _id,
           {
             password: request.pre.password.hash,
-            passwordUpdateRequired: false
+            passwordUpdateRequired: false,
           },
           Log
-        )
+        );
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
-    }
+    };
 
     server.route({
       method: 'PUT',
@@ -217,15 +207,15 @@ module.exports = function(server, mongoose, logger) {
         handler: updateCurrentUserPasswordHandler,
         auth: {
           strategy: authStrategy,
-          scope: _.values(USER_ROLES)
+          scope: _.values(USER_ROLES),
         },
         description: 'Update current user password.',
         tags: ['api', 'User', 'Update Current User Password'],
         validate: {
           headers: headersValidation,
           payload: {
-            password: Joi.string().required()
-          }
+            password: Joi.string().required(),
+          },
         },
         pre: updateCurrentUserPasswordPre,
         plugins: {
@@ -234,54 +224,52 @@ module.exports = function(server, mongoose, logger) {
               { code: 200, message: 'Success' },
               { code: 400, message: 'Bad Request' },
               { code: 404, message: 'Not Found' },
-              { code: 500, message: 'Internal Server Error' }
-            ]
+              { code: 500, message: 'Internal Server Error' },
+            ],
           },
-          policies: [auditLog(mongoose, { payloadFilter: [] }, Log), demoUser]
-        }
-      }
-    })
-  })()
+          policies: [auditLog(mongoose, { payloadFilter: [] }, Log), demoUser],
+        },
+      },
+    });
+  })();
 
   // Update Current User PIN Endpoint
-  ;(function() {
-    const Log = logger.bind(Chalk.magenta('Update Current User PIN'))
-    const User = mongoose.model('user')
+  (function() {
+    const Log = logger.bind(Chalk.magenta('Update Current User PIN'));
+    const User = mongoose.model('user');
 
-    const collectionName = User.collectionDisplayName || User.modelName
+    const collectionName = User.collectionDisplayName || User.modelName;
 
-    Log.note(
-      'Generating Update Current User PIN endpoint for ' + collectionName
-    )
+    Log.note('Generating Update Current User PIN endpoint for ' + collectionName);
 
     const updateCurrentUserPINPre = [
       {
         assign: 'pin',
         method: async function(request, h) {
           try {
-            let hashedPin = await User.generateHash(request.payload.pin, Log)
-            return hashedPin
+            let hashedPin = await User.generateHash(request.payload.pin, Log);
+            return hashedPin;
           } catch (err) {
-            errorHelper.handleError(err, Log)
+            errorHelper.handleError(err, Log);
           }
-        }
-      }
-    ]
+        },
+      },
+    ];
 
     const updateCurrentUserPINHandler = async function(request, h) {
       try {
-        const _id = request.auth.credentials.user._id
+        const _id = request.auth.credentials.user._id;
 
         return await RestHapi.update(
           User,
           _id,
           { pin: request.pre.pin.hash, pinUpdateRequired: false },
           Log
-        )
+        );
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
-    }
+    };
 
     server.route({
       method: 'PUT',
@@ -290,15 +278,15 @@ module.exports = function(server, mongoose, logger) {
         handler: updateCurrentUserPINHandler,
         auth: {
           strategy: authStrategy,
-          scope: _.values(USER_ROLES)
+          scope: _.values(USER_ROLES),
         },
         description: 'Update current user PIN.',
         tags: ['api', 'User', 'Update Current User PIN'],
         validate: {
           headers: headersValidation,
           payload: {
-            pin: Joi.string().required()
-          }
+            pin: Joi.string().required(),
+          },
         },
         pre: updateCurrentUserPINPre,
         plugins: {
@@ -307,25 +295,23 @@ module.exports = function(server, mongoose, logger) {
               { code: 200, message: 'Success' },
               { code: 400, message: 'Bad Request' },
               { code: 404, message: 'Not Found' },
-              { code: 500, message: 'Internal Server Error' }
-            ]
+              { code: 500, message: 'Internal Server Error' },
+            ],
           },
-          policies: [auditLog(mongoose, { payloadFilter: [] }, Log), demoUser]
-        }
-      }
-    })
-  })()
+          policies: [auditLog(mongoose, { payloadFilter: [] }, Log), demoUser],
+        },
+      },
+    });
+  })();
 
   // Update Current User Profile Endpoint
-  ;(function() {
-    const Log = logger.bind(Chalk.magenta('Update Current User Profile'))
-    const User = mongoose.model('user')
+  (function() {
+    const Log = logger.bind(Chalk.magenta('Update Current User Profile'));
+    const User = mongoose.model('user');
 
-    const collectionName = User.collectionDisplayName || User.modelName
+    const collectionName = User.collectionDisplayName || User.modelName;
 
-    Log.note(
-      'Generating Update Current User Profile endpoint for ' + collectionName
-    )
+    Log.note('Generating Update Current User Profile endpoint for ' + collectionName);
 
     const updateCurrentUserProfilePre = [
       {
@@ -334,39 +320,38 @@ module.exports = function(server, mongoose, logger) {
           try {
             if (
               !request.payload.profile.email ||
-              request.payload.profile.email ===
-                request.auth.credentials.user.email
+              request.payload.profile.email === request.auth.credentials.user.email
             ) {
-              return true
+              return true;
             }
 
             const conditions = {
               email: request.payload.profile.email,
-              isDeleted: false
-            }
+              isDeleted: false,
+            };
 
-            let user = await User.findOne(conditions)
+            let user = await User.findOne(conditions);
             if (user) {
-              throw Boom.conflict('Email already in use.')
+              throw Boom.conflict('Email already in use.');
             }
 
-            return true
+            return true;
           } catch (err) {
-            errorHelper.handleError(err, Log)
+            errorHelper.handleError(err, Log);
           }
-        }
-      }
-    ]
+        },
+      },
+    ];
 
     const updateCurrentUserProfileHandler = async function(request, h) {
       try {
-        const _id = request.auth.credentials.user._id
+        const _id = request.auth.credentials.user._id;
 
-        return await RestHapi.update(User, _id, request.payload.profile, Log)
+        return await RestHapi.update(User, _id, request.payload.profile, Log);
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
-    }
+    };
 
     server.route({
       method: 'PUT',
@@ -375,7 +360,7 @@ module.exports = function(server, mongoose, logger) {
         handler: updateCurrentUserProfileHandler,
         auth: {
           strategy: authStrategy,
-          scope: _.values(USER_ROLES)
+          scope: _.values(USER_ROLES),
         },
         description: 'Update current user profile.',
         tags: ['api', 'User', 'Update Current User Profile'],
@@ -390,9 +375,9 @@ module.exports = function(server, mongoose, logger) {
               location: Joi.string(),
               education: Joi.string(),
               bio: Joi.string(),
-              profileImageUrl: Joi.string()
-            }
-          }
+              profileImageUrl: Joi.string(),
+            },
+          },
         },
         pre: updateCurrentUserProfilePre,
         plugins: {
@@ -401,33 +386,33 @@ module.exports = function(server, mongoose, logger) {
               { code: 200, message: 'Success' },
               { code: 400, message: 'Bad Request' },
               { code: 404, message: 'Not Found' },
-              { code: 500, message: 'Internal Server Error' }
-            ]
+              { code: 500, message: 'Internal Server Error' },
+            ],
           },
-          policies: [auditLog(mongoose, {}, Log), demoUser]
-        }
-      }
-    })
-  })()
+          policies: [auditLog(mongoose, {}, Log), demoUser],
+        },
+      },
+    });
+  })();
 
   // Delete Current User Endpoint
-  ;(function() {
-    const Log = logger.bind(Chalk.magenta('Delete Current User'))
-    const User = mongoose.model('user')
+  (function() {
+    const Log = logger.bind(Chalk.magenta('Delete Current User'));
+    const User = mongoose.model('user');
 
-    const collectionName = User.collectionDisplayName || User.modelName
+    const collectionName = User.collectionDisplayName || User.modelName;
 
-    Log.note('Generating Delete Current User endpoint for ' + collectionName)
+    Log.note('Generating Delete Current User endpoint for ' + collectionName);
 
     const deleteCurrentUserHandler = async function(request, h) {
       try {
-        const _id = request.auth.credentials.user._id
+        const _id = request.auth.credentials.user._id;
 
-        return await RestHapi.deleteOne(User, _id, {}, Log)
+        return await RestHapi.deleteOne(User, _id, {}, Log);
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
-    }
+    };
 
     server.route({
       method: 'DELETE',
@@ -436,12 +421,12 @@ module.exports = function(server, mongoose, logger) {
         handler: deleteCurrentUserHandler,
         auth: {
           strategy: authStrategy,
-          scope: _.values(USER_ROLES)
+          scope: _.values(USER_ROLES),
         },
         description: 'Delete current user.',
         tags: ['api', 'User', 'Delete Current User'],
         validate: {
-          headers: headersValidation
+          headers: headersValidation,
         },
         plugins: {
           'hapi-swagger': {
@@ -449,33 +434,33 @@ module.exports = function(server, mongoose, logger) {
               { code: 200, message: 'Success' },
               { code: 400, message: 'Bad Request' },
               { code: 404, message: 'Not Found' },
-              { code: 500, message: 'Internal Server Error' }
-            ]
+              { code: 500, message: 'Internal Server Error' },
+            ],
           },
-          policies: [auditLog(mongoose, {}, Log), demoUser]
-        }
-      }
-    })
-  })()
+          policies: [auditLog(mongoose, {}, Log), demoUser],
+        },
+      },
+    });
+  })();
 
   // Enable Account Endpoint
-  ;(function() {
-    const Log = logger.bind(Chalk.magenta('Enable Account'))
-    const User = mongoose.model('user')
+  (function() {
+    const Log = logger.bind(Chalk.magenta('Enable Account'));
+    const User = mongoose.model('user');
 
-    const collectionName = User.collectionDisplayName || User.modelName
+    const collectionName = User.collectionDisplayName || User.modelName;
 
-    Log.note('Generating Enable Account endpoint for ' + collectionName)
+    Log.note('Generating Enable Account endpoint for ' + collectionName);
 
     const enableAccountHandler = async function(request, h) {
       try {
-        const _id = request.params._id
+        const _id = request.params._id;
 
-        return await RestHapi.update(User, _id, { isEnabled: true }, Log)
+        return await RestHapi.update(User, _id, { isEnabled: true }, Log);
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
-    }
+    };
 
     server.route({
       method: 'PUT',
@@ -484,15 +469,15 @@ module.exports = function(server, mongoose, logger) {
         handler: enableAccountHandler,
         auth: {
           strategy: authStrategy,
-          scope: ['root', 'enableUser', '!-enableUser']
+          scope: ['root', 'enableUser', '!-enableUser'],
         },
         description: 'Enable user account.',
         tags: ['api', 'User', 'Enable Account'],
         validate: {
           headers: headersValidation,
           params: {
-            _id: RestHapi.joiHelper.joiObjectId()
-          }
+            _id: RestHapi.joiHelper.joiObjectId(),
+          },
         },
         plugins: {
           'hapi-swagger': {
@@ -500,37 +485,33 @@ module.exports = function(server, mongoose, logger) {
               { code: 200, message: 'Success' },
               { code: 400, message: 'Bad Request' },
               { code: 404, message: 'Not Found' },
-              { code: 500, message: 'Internal Server Error' }
-            ]
+              { code: 500, message: 'Internal Server Error' },
+            ],
           },
-          policies: [
-            auditLog(mongoose, {}, Log),
-            rankAuth(mongoose, '_id'),
-            demoAuth
-          ]
-        }
-      }
-    })
-  })()
+          policies: [auditLog(mongoose, {}, Log), rankAuth(mongoose, '_id'), demoAuth],
+        },
+      },
+    });
+  })();
 
   // Disable Account Endpoint
-  ;(function() {
-    const Log = logger.bind(Chalk.magenta('Disable Account'))
-    const User = mongoose.model('user')
+  (function() {
+    const Log = logger.bind(Chalk.magenta('Disable Account'));
+    const User = mongoose.model('user');
 
-    const collectionName = User.collectionDisplayName || User.modelName
+    const collectionName = User.collectionDisplayName || User.modelName;
 
-    Log.note('Generating Disable Account endpoint for ' + collectionName)
+    Log.note('Generating Disable Account endpoint for ' + collectionName);
 
     const disableAccountHandler = async function(request, h) {
       try {
-        const _id = request.params._id
+        const _id = request.params._id;
 
-        return await RestHapi.update(User, _id, { isEnabled: false }, Log)
+        return await RestHapi.update(User, _id, { isEnabled: false }, Log);
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
-    }
+    };
 
     server.route({
       method: 'PUT',
@@ -539,15 +520,15 @@ module.exports = function(server, mongoose, logger) {
         handler: disableAccountHandler,
         auth: {
           strategy: authStrategy,
-          scope: ['root', 'disableUser', '!-disableUser']
+          scope: ['root', 'disableUser', '!-disableUser'],
         },
         description: 'Disable user account.',
         tags: ['api', 'User', 'Disable Account'],
         validate: {
           headers: headersValidation,
           params: {
-            _id: RestHapi.joiHelper.joiObjectId()
-          }
+            _id: RestHapi.joiHelper.joiObjectId(),
+          },
         },
         plugins: {
           'hapi-swagger': {
@@ -555,37 +536,33 @@ module.exports = function(server, mongoose, logger) {
               { code: 200, message: 'Success' },
               { code: 400, message: 'Bad Request' },
               { code: 404, message: 'Not Found' },
-              { code: 500, message: 'Internal Server Error' }
-            ]
+              { code: 500, message: 'Internal Server Error' },
+            ],
           },
-          policies: [
-            auditLog(mongoose, {}, Log),
-            rankAuth(mongoose, '_id'),
-            demoAuth
-          ]
-        }
-      }
-    })
-  })()
+          policies: [auditLog(mongoose, {}, Log), rankAuth(mongoose, '_id'), demoAuth],
+        },
+      },
+    });
+  })();
 
   // Activate Account Endpoint
-  ;(function() {
-    const Log = logger.bind(Chalk.magenta('Activate Account'))
-    const User = mongoose.model('user')
+  (function() {
+    const Log = logger.bind(Chalk.magenta('Activate Account'));
+    const User = mongoose.model('user');
 
-    const collectionName = User.collectionDisplayName || User.modelName
+    const collectionName = User.collectionDisplayName || User.modelName;
 
-    Log.note('Generating Activate Account endpoint for ' + collectionName)
+    Log.note('Generating Activate Account endpoint for ' + collectionName);
 
     const activateAccountHandler = async function(request, h) {
       try {
-        const _id = request.params._id
+        const _id = request.params._id;
 
-        return await RestHapi.update(User, _id, { isActive: true }, Log)
+        return await RestHapi.update(User, _id, { isActive: true }, Log);
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
-    }
+    };
 
     server.route({
       method: 'PUT',
@@ -594,15 +571,15 @@ module.exports = function(server, mongoose, logger) {
         handler: activateAccountHandler,
         auth: {
           strategy: authStrategy,
-          scope: ['root', 'activateUser', '!-activateUser']
+          scope: ['root', 'activateUser', '!-activateUser'],
         },
         description: 'Activate user account.',
         tags: ['api', 'User', 'Activate Account'],
         validate: {
           headers: headersValidation,
           params: {
-            _id: RestHapi.joiHelper.joiObjectId()
-          }
+            _id: RestHapi.joiHelper.joiObjectId(),
+          },
         },
         plugins: {
           'hapi-swagger': {
@@ -610,37 +587,33 @@ module.exports = function(server, mongoose, logger) {
               { code: 200, message: 'Success' },
               { code: 400, message: 'Bad Request' },
               { code: 404, message: 'Not Found' },
-              { code: 500, message: 'Internal Server Error' }
-            ]
+              { code: 500, message: 'Internal Server Error' },
+            ],
           },
-          policies: [
-            auditLog(mongoose, {}, Log),
-            rankAuth(mongoose, '_id'),
-            demoAuth
-          ]
-        }
-      }
-    })
-  })()
+          policies: [auditLog(mongoose, {}, Log), rankAuth(mongoose, '_id'), demoAuth],
+        },
+      },
+    });
+  })();
 
   // Deactivate Account Endpoint
-  ;(function() {
-    const Log = logger.bind(Chalk.magenta('Deactivate Account'))
-    const User = mongoose.model('user')
+  (function() {
+    const Log = logger.bind(Chalk.magenta('Deactivate Account'));
+    const User = mongoose.model('user');
 
-    const collectionName = User.collectionDisplayName || User.modelName
+    const collectionName = User.collectionDisplayName || User.modelName;
 
-    Log.note('Generating Deactivate Account endpoint for ' + collectionName)
+    Log.note('Generating Deactivate Account endpoint for ' + collectionName);
 
     const deactivateAccountHandler = async function(request, h) {
       try {
-        const _id = request.params._id
+        const _id = request.params._id;
 
-        return await RestHapi.update(User, _id, { isActive: false }, Log)
+        return await RestHapi.update(User, _id, { isActive: false }, Log);
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
-    }
+    };
 
     server.route({
       method: 'PUT',
@@ -649,15 +622,15 @@ module.exports = function(server, mongoose, logger) {
         handler: deactivateAccountHandler,
         auth: {
           strategy: authStrategy,
-          scope: ['root', 'deactivateUser', '!-deactivateUser']
+          scope: ['root', 'deactivateUser', '!-deactivateUser'],
         },
         description: 'Deactivate user account.',
         tags: ['api', 'User', 'Deactivate Account'],
         validate: {
           headers: headersValidation,
           params: {
-            _id: RestHapi.joiHelper.joiObjectId()
-          }
+            _id: RestHapi.joiHelper.joiObjectId(),
+          },
         },
         plugins: {
           'hapi-swagger': {
@@ -665,36 +638,32 @@ module.exports = function(server, mongoose, logger) {
               { code: 200, message: 'Success' },
               { code: 400, message: 'Bad Request' },
               { code: 404, message: 'Not Found' },
-              { code: 500, message: 'Internal Server Error' }
-            ]
+              { code: 500, message: 'Internal Server Error' },
+            ],
           },
-          policies: [
-            auditLog(mongoose, {}, Log),
-            rankAuth(mongoose, '_id'),
-            demoAuth
-          ]
-        }
-      }
-    })
-  })()
+          policies: [auditLog(mongoose, {}, Log), rankAuth(mongoose, '_id'), demoAuth],
+        },
+      },
+    });
+  })();
 
   // Get User Scope Endpoint
-  ;(function() {
-    const Log = logger.bind(Chalk.magenta('Get User Scope'))
-    const User = mongoose.model('user')
-    const Permission = mongoose.model('permission')
+  (function() {
+    const Log = logger.bind(Chalk.magenta('Get User Scope'));
+    const User = mongoose.model('user');
+    const Permission = mongoose.model('permission');
 
-    const collectionName = User.collectionDisplayName || User.modelName
+    const collectionName = User.collectionDisplayName || User.modelName;
 
-    Log.note('Generating Get User Scope endpoint for ' + collectionName)
+    Log.note('Generating Get User Scope endpoint for ' + collectionName);
 
     const getUserScopeHandler = async function(request, h) {
       try {
-        return await Permission.getScope({ _id: request.params._id }, Log)
+        return await Permission.getScope({ _id: request.params._id }, Log);
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
-    }
+    };
 
     server.route({
       method: 'GET',
@@ -703,14 +672,14 @@ module.exports = function(server, mongoose, logger) {
         handler: getUserScopeHandler,
         auth: {
           strategy: authStrategy,
-          scope: ['root', 'readUserScope', '!-readUserScope']
+          scope: ['root', 'readUserScope', '!-readUserScope'],
         },
         description: 'Get user effective permissions.',
         tags: ['api', 'User', 'Get User Scope'],
         validate: {
           params: {
-            _id: RestHapi.joiHelper.joiObjectId()
-          }
+            _id: RestHapi.joiHelper.joiObjectId(),
+          },
         },
         plugins: {
           'hapi-swagger': {
@@ -718,29 +687,27 @@ module.exports = function(server, mongoose, logger) {
               { code: 200, message: 'Success' },
               { code: 400, message: 'Bad Request' },
               { code: 404, message: 'Not Found' },
-              { code: 500, message: 'Internal Server Error' }
-            ]
-          }
-        }
-      }
-    })
-  })()
+              { code: 500, message: 'Internal Server Error' },
+            ],
+          },
+        },
+      },
+    });
+  })();
 
   // Get User Connection Stats Endpoint
-  ;(function() {
-    const Log = logger.bind(Chalk.magenta('Get User Connection Stats'))
-    const User = mongoose.model('user')
-    const Connection = mongoose.model('connection')
+  (function() {
+    const Log = logger.bind(Chalk.magenta('Get User Connection Stats'));
+    const User = mongoose.model('user');
+    const Connection = mongoose.model('connection');
 
-    const collectionName = User.collectionDisplayName || User.modelName
+    const collectionName = User.collectionDisplayName || User.modelName;
 
-    Log.note(
-      'Generating Get User Connection Stats endpoint for ' + collectionName
-    )
+    Log.note('Generating Get User Connection Stats endpoint for ' + collectionName);
 
     const getUserConnectionStatsHandler = async function(request, h) {
       try {
-        const promises = []
+        const promises = [];
 
         promises.push(
           RestHapi.getAll(
@@ -751,7 +718,7 @@ module.exports = function(server, mongoose, logger) {
             { isFollowed: true, $count: true },
             Log
           )
-        )
+        );
         promises.push(
           RestHapi.getAll(
             User,
@@ -761,7 +728,7 @@ module.exports = function(server, mongoose, logger) {
             { isFollowing: true, $count: true },
             Log
           )
-        )
+        );
         promises.push(
           RestHapi.getAll(
             User,
@@ -771,20 +738,20 @@ module.exports = function(server, mongoose, logger) {
             { isContact: true, $count: true },
             Log
           )
-        )
+        );
 
-        let result = await Promise.all(promises)
+        let result = await Promise.all(promises);
         const connectionStats = {
           followers: result[0],
           following: result[1],
-          contacts: result[2]
-        }
+          contacts: result[2],
+        };
 
-        return connectionStats
+        return connectionStats;
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
-    }
+    };
 
     server.route({
       method: 'GET',
@@ -793,14 +760,14 @@ module.exports = function(server, mongoose, logger) {
         handler: getUserConnectionStatsHandler,
         auth: {
           strategy: authStrategy,
-          scope: ['!-readUserConnectionStats']
+          scope: ['!-readUserConnectionStats'],
         },
         description: 'Get user connection stats.',
         tags: ['api', 'User', 'Get User Connection Stats'],
         validate: {
           params: {
-            _id: RestHapi.joiHelper.joiObjectId()
-          }
+            _id: RestHapi.joiHelper.joiObjectId(),
+          },
         },
         plugins: {
           'hapi-swagger': {
@@ -808,11 +775,11 @@ module.exports = function(server, mongoose, logger) {
               { code: 200, message: 'Success' },
               { code: 400, message: 'Bad Request' },
               { code: 404, message: 'Not Found' },
-              { code: 500, message: 'Internal Server Error' }
-            ]
-          }
-        }
-      }
-    })
-  })()
-}
+              { code: 500, message: 'Internal Server Error' },
+            ],
+          },
+        },
+      },
+    });
+  })();
+};

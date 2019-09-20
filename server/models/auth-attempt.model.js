@@ -1,82 +1,81 @@
-'use strict'
+'use strict';
 
-const Config = require('../../config')
-const errorHelper = require('../utilities/error-helper')
+const Config = require('../../config');
+const errorHelper = require('../utilities/error-helper');
 
 module.exports = function(mongoose) {
-  const modelName = 'authAttempt'
-  const Types = mongoose.Schema.Types
+  const modelName = 'authAttempt';
+  const Types = mongoose.Schema.Types;
   const Schema = new mongoose.Schema(
     {
       email: {
         type: Types.String,
-        required: true
+        required: true,
       },
       ip: {
         type: Types.String,
-        required: true
+        required: true,
       },
       time: {
         type: Types.Date,
-        required: true
-      }
+        required: true,
+      },
     },
     { collection: modelName }
-  )
+  );
 
   Schema.statics = {
     collectionName: modelName,
     routeOptions: {
-      alias: 'auth-attempt'
+      alias: 'auth-attempt',
     },
     createInstance: async function(ip, email, Log) {
       try {
         const document = {
           ip,
           email: email.toLowerCase(),
-          time: new Date()
-        }
+          time: new Date(),
+        };
 
-        return await mongoose.model('authAttempt').create(document)
+        return await mongoose.model('authAttempt').create(document);
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
     },
 
     abuseDetected: async function(ip, email, Log) {
       try {
-        const self = this
+        const self = this;
 
-        const LOCKOUT_PERIOD = Config.get('/constants/LOCKOUT_PERIOD')
+        const LOCKOUT_PERIOD = Config.get('/constants/LOCKOUT_PERIOD');
         const expirationDate = LOCKOUT_PERIOD
           ? { $gt: Date.now() - LOCKOUT_PERIOD * 60000 }
-          : { $lt: Date.now() }
+          : { $lt: Date.now() };
 
         let query = {
           ip,
-          time: expirationDate
-        }
+          time: expirationDate,
+        };
 
-        const abusiveIpCount = await self.count(query)
+        const abusiveIpCount = await self.count(query);
         query = {
           ip,
           email: email.toLowerCase(),
-          time: expirationDate
-        }
+          time: expirationDate,
+        };
 
-        const abusiveIpUserCount = await self.count(query)
+        const abusiveIpUserCount = await self.count(query);
 
-        const AUTH_ATTEMPTS = Config.get('/constants/AUTH_ATTEMPTS')
-        const ipLimitReached = abusiveIpCount >= AUTH_ATTEMPTS.FOR_IP
-        const ipUserLimitReached =
-          abusiveIpUserCount >= AUTH_ATTEMPTS.FOR_IP_AND_USER
+        const AUTH_ATTEMPTS = Config.get('/constants/AUTH_ATTEMPTS');
+        const ipLimitReached = abusiveIpCount >= AUTH_ATTEMPTS.FOR_IP;
+        const ipUserLimitReached = abusiveIpUserCount >= AUTH_ATTEMPTS.FOR_IP_AND_USER;
 
-        return ipLimitReached || ipUserLimitReached
+        return ipLimitReached || ipUserLimitReached;
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
-    }
-  }
+    },
+  };
 
-  return Schema
-}
+  return Schema;
+};

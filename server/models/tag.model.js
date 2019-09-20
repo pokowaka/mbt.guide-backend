@@ -1,18 +1,18 @@
-'use strict'
+'use strict';
 
 module.exports = function(mongoose) {
-  var modelName = 'tag'
-  var Types = mongoose.Schema.Types
+  var modelName = 'tag';
+  var Types = mongoose.Schema.Types;
   var Schema = new mongoose.Schema(
     {
       name: {
         type: Types.String,
         required: true,
-        unique: true
-      }
+        unique: true,
+      },
     },
     { collection: modelName }
-  )
+  );
 
   Schema.statics = {
     collectionName: modelName,
@@ -23,11 +23,11 @@ module.exports = function(mongoose) {
           alias: 'segments',
           model: 'segment',
           embedAssociation: true,
-          linkingModel: 'segment_tag'
-        }
-      }
-    }
-  }
+          linkingModel: 'segment_tag',
+        },
+      },
+    },
+  };
 
-  return Schema
-}
+  return Schema;
+};

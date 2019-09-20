@@ -1,75 +1,65 @@
-'use strict'
+'use strict';
 
-const Chalk = require('chalk')
-const RestHapi = require('rest-hapi')
-const errorHelper = require('../utilities/error-helper')
+const Chalk = require('chalk');
+const RestHapi = require('rest-hapi');
+const errorHelper = require('../utilities/error-helper');
 
 module.exports = function(server, mongoose, logger) {
   // Dashboard Stats Endpoint
-  ;(function() {
-    const Log = logger.bind(Chalk.magenta('Dashboard Stats'))
-    const User = mongoose.model('user')
-    const Document = mongoose.model('document')
-    const Image = mongoose.model('image')
-    const Message = mongoose.model('message')
-    const Visitor = mongoose.model('visitor')
+  (function() {
+    const Log = logger.bind(Chalk.magenta('Dashboard Stats'));
+    const User = mongoose.model('user');
+    const Document = mongoose.model('document');
+    const Image = mongoose.model('image');
+    const Message = mongoose.model('message');
+    const Visitor = mongoose.model('visitor');
 
-    Log.note('Generating Dashboard Stats endpoint')
+    Log.note('Generating Dashboard Stats endpoint');
 
     const dashboardStatsHandler = async function(request, h) {
       try {
-        let promises = []
-        let stats = {}
-        promises.push(
-          RestHapi.list(User, { isDeleted: false, $count: true }, Log)
-        )
-        promises.push(
-          RestHapi.list(Document, { isDeleted: false, $count: true }, Log)
-        )
-        promises.push(
-          RestHapi.list(Image, { isDeleted: false, $count: true }, Log)
-        )
-        promises.push(
-          RestHapi.list(Message, { isDeleted: false, $count: true }, Log)
-        )
+        let promises = [];
+        let stats = {};
+        promises.push(RestHapi.list(User, { isDeleted: false, $count: true }, Log));
+        promises.push(RestHapi.list(Document, { isDeleted: false, $count: true }, Log));
+        promises.push(RestHapi.list(Image, { isDeleted: false, $count: true }, Log));
+        promises.push(RestHapi.list(Message, { isDeleted: false, $count: true }, Log));
         promises.push(
           RestHapi.list(
             User,
             {
               isDeleted: false,
               $where: { facebookId: { $exists: true } },
-              $count: true
+              $count: true,
             },
             Log
           )
-        )
+        );
         promises.push(
           RestHapi.list(
             User,
             {
               isDeleted: false,
               $where: { googleId: { $exists: true } },
-              $count: true
+              $count: true,
             },
             Log
           )
-        )
+        );
         promises.push(
           RestHapi.list(
             User,
             {
               isDeleted: false,
               $where: { githubId: { $exists: true } },
-              $count: true
+              $count: true,
             },
             Log
           )
-        )
-        promises.push(
-          RestHapi.list(Visitor, { isDeleted: false, $count: true }, Log)
-        )
+        );
+        promises.push(RestHapi.list(Visitor, { isDeleted: false, $count: true }, Log));
 
-        let result = await Promise.all(promises)
+        let result = await Promise.all(promises);
 
         stats = {
           userCount: result[0],
@@ -79,138 +69,138 @@ module.exports = function(server, mongoose, logger) {
           facebookUserCount: result[4],
           googleUserCount: result[5],
           githubUserCount: result[6],
-          visitorCount: result[7]
-        }
+          visitorCount: result[7],
+        };
 
-        promises = []
-        let step = {}
+        promises = [];
+        let step = {};
 
         // MONGO AGGREGATION PIPELINE EXAMPLE
 
         // region BUILD TOTAL VISITORS PER COUNTRY QUERY
 
-        const visitorsPerCountryQuery = []
+        const visitorsPerCountryQuery = [];
 
         // Group and count visitors from each country
-        step = {}
+        step = {};
 
         step.$group = {
           _id: '$country_code',
-          visitorCount: { $sum: 1 }
-        }
+          visitorCount: { $sum: 1 },
+        };
 
-        visitorsPerCountryQuery.push(step)
+        visitorsPerCountryQuery.push(step);
 
         // Format the data for the next step
-        step = {}
+        step = {};
 
         step.$group = {
           _id: null,
           totalVisitorsPerCountry: {
-            $push: { k: '$_id', v: '$visitorCount' }
-          }
-        }
+            $push: { k: '$_id', v: '$visitorCount' },
+          },
+        };
 
-        visitorsPerCountryQuery.push(step)
+        visitorsPerCountryQuery.push(step);
 
         // Remove null values since they cause errors in the next step
-        step = {}
+        step = {};
 
         step.$project = {
           totalVisitorsPerCountry: {
             $filter: {
               input: '$totalVisitorsPerCountry',
               as: 'data',
-              cond: { $ne: ['$$data.k', null] }
-            }
-          }
-        }
+              cond: { $ne: ['$$data.k', null] },
+            },
+          },
+        };
 
-        visitorsPerCountryQuery.push(step)
+        visitorsPerCountryQuery.push(step);
 
         // Transform data from array to object
-        step = {}
+        step = {};
 
         step.$project = {
           _id: 0,
           totalVisitorsPerCountry: {
-            $arrayToObject: '$totalVisitorsPerCountry'
-          }
-        }
+            $arrayToObject: '$totalVisitorsPerCountry',
+          },
+        };
 
-        visitorsPerCountryQuery.push(step)
+        visitorsPerCountryQuery.push(step);
 
-        promises.push(Visitor.aggregate(visitorsPerCountryQuery))
+        promises.push(Visitor.aggregate(visitorsPerCountryQuery));
 
         // endregion
 
         // region BUILD TOTAL VISITORS PER BROWSER QUERY
 
-        const visitorsPerBrowserQuery = []
+        const visitorsPerBrowserQuery = [];
 
         // Group and count each browser
-        step = {}
+        step = {};
 
         step.$group = {
           _id: '$browser',
-          visitorCount: { $sum: 1 }
-        }
+          visitorCount: { $sum: 1 },
+        };
 
-        visitorsPerBrowserQuery.push(step)
+        visitorsPerBrowserQuery.push(step);
 
         // Format the data for the next step
-        step = {}
+        step = {};
 
         step.$group = {
           _id: null,
           totalVisitorsPerBrowser: {
-            $push: { k: '$_id', v: '$visitorCount' }
-          }
-        }
+            $push: { k: '$_id', v: '$visitorCount' },
+          },
+        };
 
-        visitorsPerBrowserQuery.push(step)
+        visitorsPerBrowserQuery.push(step);
 
         // Remove null values since they cause errors in the next step
-        step = {}
+        step = {};
 
         step.$project = {
           totalVisitorsPerCountry: {
             $filter: {
               input: '$totalVisitorsPerCountry',
               as: 'data',
-              cond: { $ne: ['$$data.k', null] }
-            }
-          }
-        }
+              cond: { $ne: ['$$data.k', null] },
+            },
+          },
+        };
 
-        visitorsPerCountryQuery.push(step)
+        visitorsPerCountryQuery.push(step);
 
         // Transform data from array to object
-        step = {}
+        step = {};
 
         step.$project = {
           _id: 0,
           totalVisitorsPerBrowser: {
-            $arrayToObject: '$totalVisitorsPerBrowser'
-          }
-        }
+            $arrayToObject: '$totalVisitorsPerBrowser',
+          },
+        };
 
-        visitorsPerBrowserQuery.push(step)
+        visitorsPerBrowserQuery.push(step);
 
-        promises.push(Visitor.aggregate(visitorsPerBrowserQuery))
+        promises.push(Visitor.aggregate(visitorsPerBrowserQuery));
 
         // endregion
 
-        result = await Promise.all(promises)
+        result = await Promise.all(promises);
 
-        stats.totalVisitorsPerCountry = result[0][0].totalVisitorsPerCountry
-        stats.totalVisitorsPerBrowser = result[1][0].totalVisitorsPerBrowser
+        stats.totalVisitorsPerCountry = result[0][0].totalVisitorsPerCountry;
+        stats.totalVisitorsPerBrowser = result[1][0].totalVisitorsPerBrowser;
 
-        return { stats }
+        return { stats };
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
-    }
+    };
 
     server.route({
       method: 'GET',
@@ -227,11 +217,11 @@ module.exports = function(server, mongoose, logger) {
               { code: 200, message: 'Success' },
               { code: 400, message: 'Bad Request' },
               { code: 404, message: 'Not Found' },
-              { code: 500, message: 'Internal Server Error' }
-            ]
-          }
-        }
-      }
-    })
-  })()
-}
+              { code: 500, message: 'Internal Server Error' },
+            ],
+          },
+        },
+      },
+    });
+  })();
+};

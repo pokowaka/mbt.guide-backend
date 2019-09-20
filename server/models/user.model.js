@@ -1,78 +1,78 @@
-'use strict'
+'use strict';
 
-const Bcrypt = require('bcryptjs')
-const RestHapi = require('rest-hapi')
-const errorHelper = require('../utilities/error-helper')
+const Bcrypt = require('bcryptjs');
+const RestHapi = require('rest-hapi');
+const errorHelper = require('../utilities/error-helper');
 
-const permissionAuth = require('../policies/permission-auth.policy')
-const groupAuth = require('../policies/group-auth.policy')
-const rankAuth = require('../policies/role-auth.policy').rankAuth
-const promoteAuth = require('../policies/role-auth.policy').promoteAuth
+const permissionAuth = require('../policies/permission-auth.policy');
+const groupAuth = require('../policies/group-auth.policy');
+const rankAuth = require('../policies/role-auth.policy').rankAuth;
+const promoteAuth = require('../policies/role-auth.policy').promoteAuth;
 
-const Config = require('../../config')
+const Config = require('../../config');
 
-const enableDemoAuth = Config.get('/enableDemoAuth')
-const demoAuth = enableDemoAuth ? 'demoAuth' : null
+const enableDemoAuth = Config.get('/enableDemoAuth');
+const demoAuth = enableDemoAuth ? 'demoAuth' : null;
 
-const USER_ROLES = Config.get('/constants/USER_ROLES')
+const USER_ROLES = Config.get('/constants/USER_ROLES');
 
-const admin = require('../../node_modules/firebase-admin')
+const admin = require('../../node_modules/firebase-admin');
 
-const serviceAccount = require('../../private-keys/mbt-guide-d9b1b-firebase-adminsdk-lcskb-0c3507c9e9.json')
+const serviceAccount = require('../../private-keys/mbt-guide-d9b1b-firebase-adminsdk-lcskb-0c3507c9e9.json');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: 'https://mbt-guide-d9b1b.firebaseio.com'
-})
+  databaseURL: 'https://mbt-guide-d9b1b.firebaseio.com',
+});
 
 module.exports = function(mongoose) {
-  const modelName = 'user'
-  const Types = mongoose.Schema.Types
+  const modelName = 'user';
+  const Types = mongoose.Schema.Types;
   const Schema = new mongoose.Schema(
     {
       firstName: {
         type: Types.String,
-        required: true
+        required: true,
       },
       lastName: {
         type: Types.String,
-        required: true
+        required: true,
       },
       email: {
         type: Types.String,
         required: true,
-        stringType: 'email'
+        stringType: 'email',
       },
       profileImageUrl: {
         type: Types.String,
-        stringType: 'uri'
+        stringType: 'uri',
       },
       role: {
         type: Types.ObjectId,
-        ref: 'role'
+        ref: 'role',
       },
       isActive: {
         type: Types.Boolean,
         allowOnUpdate: false,
-        default: false
+        default: false,
       },
       isEnabled: {
         type: Types.Boolean,
         allowOnUpdate: false,
-        default: true
+        default: true,
       },
       resetPassword: {
         hash: {
-          type: Types.String
+          type: Types.String,
         },
         allowOnCreate: false,
         allowOnUpdate: false,
         exclude: true,
-        type: Types.Object
-      }
+        type: Types.Object,
+      },
     },
     { collection: modelName }
-  )
+  );
 
   Schema.statics = {
     collectionName: modelName,
@@ -83,14 +83,10 @@ module.exports = function(mongoose) {
           rankAuth(mongoose, 'ownerId'),
           permissionAuth(mongoose, false),
           groupAuth(mongoose, false),
-          demoAuth
+          demoAuth,
         ],
-        updatePolicies: [
-          rankAuth(mongoose, '_id'),
-          promoteAuth(mongoose),
-          demoAuth
-        ],
-        deletePolicies: [rankAuth(mongoose, '_id'), demoAuth]
+        updatePolicies: [rankAuth(mongoose, '_id'), promoteAuth(mongoose), demoAuth],
+        deletePolicies: [rankAuth(mongoose, '_id'), demoAuth],
       },
       routeScope: {
         // Users can access their own Notifications
@@ -102,7 +98,7 @@ module.exports = function(mongoose) {
         // Users can access their own Shared Documents
         getUserSharedDocumentsScope: 'user-{params.ownerId}',
         // Users can access their own Images
-        getUserImagesScope: 'user-{params.ownerId}'
+        getUserImagesScope: 'user-{params.ownerId}',
       },
       associations: {
         role: {
@@ -110,131 +106,120 @@ module.exports = function(mongoose) {
           model: 'role',
           duplicate: [
             {
-              field: 'name'
+              field: 'name',
             },
             {
-              field: 'rank'
-            }
-          ]
+              field: 'rank',
+            },
+          ],
         },
         groups: {
           type: 'MANY_MANY',
           alias: 'group',
-          model: 'group'
+          model: 'group',
         },
         permissions: {
           type: 'MANY_MANY',
           alias: 'permission',
           model: 'permission',
-          linkingModel: 'user_permission'
+          linkingModel: 'user_permission',
         },
         connections: {
           type: 'ONE_MANY',
           alias: 'connection',
           foreignField: 'primaryUser',
-          model: 'connection'
+          model: 'connection',
         },
         conversations: {
           type: 'MANY_MANY',
           alias: 'conversation',
           model: 'conversation',
-          linkingModel: 'user_conversation'
+          linkingModel: 'user_conversation',
         },
         documents: {
           type: 'ONE_MANY',
           alias: 'document',
           foreignField: 'owner',
-          model: 'document'
+          model: 'document',
         },
         segments: {
           type: 'ONE_MANY',
           alias: 'segment',
           foreignField: 'owner',
-          model: 'segment'
+          model: 'segment',
         },
         sharedDocuments: {
           type: 'MANY_MANY',
           alias: 'shared-document',
           model: 'document',
-          linkingModel: 'user_document'
+          linkingModel: 'user_document',
         },
         images: {
           type: 'ONE_MANY',
           alias: 'image',
           foreignField: 'owner',
-          model: 'image'
+          model: 'image',
         },
         notifications: {
           type: 'ONE_MANY',
           alias: 'notification',
           foreignField: 'primaryUser',
-          model: 'notification'
-        }
+          model: 'notification',
+        },
       },
       create: {
         post: async function(document, request, result, logger) {
-          const Log = logger.bind()
+          const Log = logger.bind();
           try {
-            const User = mongoose.model('user')
+            const User = mongoose.model('user');
             if (!document.profileImageUrl) {
               let profileImageUrl =
-                'https://www.gravatar.com/avatar/' +
-                document._id +
-                '?r=PG&d=robohash'
-              return await RestHapi.update(
-                User,
-                document._id,
-                { profileImageUrl },
-                Log
-              )
+                'https://www.gravatar.com/avatar/' + document._id + '?r=PG&d=robohash';
+              return await RestHapi.update(User, document._id, { profileImageUrl }, Log);
             } else {
-              return document
+              return document;
             }
           } catch (err) {
-            errorHelper.handleError(err, Log)
+            errorHelper.handleError(err, Log);
           }
-        }
-      }
+        },
+      },
     },
 
     generateHash: async function(key, logger) {
-      const Log = logger.bind()
+      const Log = logger.bind();
       try {
-        let salt = await Bcrypt.genSalt(10)
-        let hash = await Bcrypt.hash(key, salt)
-        return { key, hash }
+        let salt = await Bcrypt.genSalt(10);
+        let hash = await Bcrypt.hash(key, salt);
+        return { key, hash };
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
     },
 
     findByToken: async function(idToken, server, logger) {
-      const Log = logger.bind()
+      const Log = logger.bind();
 
-      const Role = mongoose.model('role')
+      const Role = mongoose.model('role');
       try {
         // TODO: handle invalid token
-        const firebaseUser = await admin.auth().verifyIdToken(idToken)
+        const firebaseUser = await admin.auth().verifyIdToken(idToken);
 
-        const self = this
+        const self = this;
 
         const query = {
-          email: firebaseUser.email
-        }
+          email: firebaseUser.email,
+        };
 
-        let mongooseQuery = self.findOne(query)
+        let mongooseQuery = self.findOne(query);
 
-        let user = await mongooseQuery.lean()
+        let user = await mongooseQuery.lean();
 
         // If user doesn't exist, create one
         if (!user) {
-          const userRole = (await RestHapi.list(
-            Role,
-            { name: USER_ROLES.USER },
-            Log
-          )).docs[0]
+          const userRole = (await RestHapi.list(Role, { name: USER_ROLES.USER }, Log)).docs[0];
 
-          const [firstName, lastName] = firebaseUser.name.split(' ')
+          const [firstName, lastName] = firebaseUser.name.split(' ');
 
           user = {
             firstName,
@@ -242,22 +227,22 @@ module.exports = function(mongoose) {
             email: firebaseUser.email,
             profileImageUrl: firebaseUser.picture,
             isActive: true,
-            role: userRole._id
-          }
+            role: userRole._id,
+          };
 
           user = await RestHapi.create({
             model: 'user',
             payload: user,
-            restCall: true
-          })
+            restCall: true,
+          });
         }
 
-        return user
+        return user;
       } catch (err) {
-        errorHelper.handleError(err, Log)
+        errorHelper.handleError(err, Log);
       }
-    }
-  }
+    },
+  };
 
-  return Schema
-}
+  return Schema;
+};

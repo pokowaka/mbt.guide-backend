@@ -1,68 +1,64 @@
-'use strict'
+'use strict';
 
-const _ = require('lodash')
-const Config = require('../../config')
+const _ = require('lodash');
+const Config = require('../../config');
 
-const permissionAuth = require('../policies/permission-auth.policy')
-const rankAuth = require('../policies/role-auth.policy').rankAuth
+const permissionAuth = require('../policies/permission-auth.policy');
+const rankAuth = require('../policies/role-auth.policy').rankAuth;
 
-const enableDemoAuth = Config.get('/enableDemoAuth')
-const demoAuth = enableDemoAuth ? 'demoAuth' : null
-const USER_ROLES = Config.get('/constants/USER_ROLES')
+const enableDemoAuth = Config.get('/enableDemoAuth');
+const demoAuth = enableDemoAuth ? 'demoAuth' : null;
+const USER_ROLES = Config.get('/constants/USER_ROLES');
 
 module.exports = function(mongoose) {
-  var modelName = 'role'
-  var Types = mongoose.Schema.Types
+  var modelName = 'role';
+  var Types = mongoose.Schema.Types;
   var Schema = new mongoose.Schema(
     {
       name: {
         type: Types.String,
         enum: _.values(USER_ROLES),
         required: true,
-        unique: true
+        unique: true,
       },
       rank: {
         type: Types.Number,
         required: true,
         unique: true,
         description:
-          'Determines the role\'s position in the hierarchy, with "0" being the highest.'
+          'Determines the role\'s position in the hierarchy, with "0" being the highest.',
       },
       description: {
-        type: Types.String
-      }
+        type: Types.String,
+      },
     },
     { collection: modelName }
-  )
+  );
 
   Schema.statics = {
     collectionName: modelName,
     routeOptions: {
       policies: {
-        associatePolicies: [
-          rankAuth(mongoose, 'child'),
-          permissionAuth(mongoose, false),
-          demoAuth
-        ],
+        associatePolicies: [rankAuth(mongoose, 'child'), permissionAuth(mongoose, false), demoAuth],
         updatePolicies: [demoAuth],
-        deletePolicies: [demoAuth]
+        deletePolicies: [demoAuth],
       },
       associations: {
         users: {
           type: 'ONE_MANY',
           alias: 'user',
           foreignField: 'role',
-          model: 'user'
+          model: 'user',
         },
         permissions: {
           type: 'MANY_MANY',
           alias: 'permission',
           model: 'permission',
-          linkingModel: 'role_permission'
-        }
-      }
-    }
-  }
+          linkingModel: 'role_permission',
+        },
+      },
+    },
+  };
 
-  return Schema
-}
+  return Schema;
+};

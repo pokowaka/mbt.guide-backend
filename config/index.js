@@ -1,10 +1,10 @@
-'use strict'
+'use strict';
 
-const Confidence = require('confidence')
-const Dotenv = require('dotenv')
-const path = require('path')
+const Confidence = require('confidence');
+const Dotenv = require('dotenv');
+const path = require('path');
 
-Dotenv.config({ silent: true })
+Dotenv.config({ silent: true });
 
 /**
  * NOTE: Only secrets and values affected by the environment (not NODE_ENV) are stored in .env files. All other values
@@ -17,53 +17,53 @@ Dotenv.config({ silent: true })
 //  - production
 //  - $default
 const criteria = {
-  env: process.env.NODE_ENV
-}
+  env: process.env.NODE_ENV,
+};
 
 // These values stay the same regardless of the environment.
 const constants = {
   USER_ROLES: {
     USER: 'User',
     ADMIN: 'Admin',
-    SUPER_ADMIN: 'Super Admin'
+    SUPER_ADMIN: 'Super Admin',
   },
   PERMISSION_STATES: {
     INCLUDED: 'Included',
     EXCLUDED: 'Excluded',
-    FORBIDDEN: 'Forbidden'
+    FORBIDDEN: 'Forbidden',
   },
   CHAT_TYPES: {
     DIRECT: 'direct',
-    GROUP: 'group'
+    GROUP: 'group',
   },
   NOTIFICATION_TYPES: {
     SHARED_DOCUMENT: 'shared-document',
     FOLLOW: 'follow',
-    CONTACT: 'contact'
+    CONTACT: 'contact',
   },
   AUTH_STRATEGIES: {
     TOKEN: 'standard-jwt',
     SESSION: 'jwt-with-session',
-    REFRESH: 'jwt-with-session-and-refresh-token'
+    REFRESH: 'jwt-with-session-and-refresh-token',
   },
   REQUIRED_PASSWORD_STRENGTH: {
     USER: 3,
     ADMIN: 4,
-    SUPER_ADMIN: 4
+    SUPER_ADMIN: 4,
   },
   EXPIRATION_PERIOD: {
     SHORT: '10m',
     MEDIUM: '4h',
-    LONG: '730h'
+    LONG: '730h',
   },
   AUTH_ATTEMPTS: {
     FOR_IP: 50,
-    FOR_IP_AND_USER: 5
+    FOR_IP_AND_USER: 5,
   },
   LOCKOUT_PERIOD: 30, // in units of minutes
   API_TITLE: 'appy API',
-  WEB_TITLE: 'appy Admin'
-}
+  WEB_TITLE: 'appy Admin',
+};
 
 const config = {
   $meta: 'This file configures the appy API.',
@@ -72,59 +72,59 @@ const config = {
   port: {
     $filter: 'env',
     production: process.env.SERVER_PORT,
-    $default: process.env.SERVER_PORT
+    $default: process.env.SERVER_PORT,
   },
   S3BucketName: {
     $filter: 'env',
     production: 'appy-cdn',
-    $default: 'appy-cdn'
+    $default: 'appy-cdn',
   },
   jwtSecret: {
     $filter: 'env',
     production: process.env.JWT_SECRET,
-    $default: process.env.JWT_SECRET
+    $default: process.env.JWT_SECRET,
   },
   socialPassword: {
     $filter: 'env',
     production: process.env.SOCIAL_PASSWORD,
-    $default: process.env.SOCIAL_PASSWORD
+    $default: process.env.SOCIAL_PASSWORD,
   },
   socialIds: {
     $filter: 'env',
     production: {
       facebook: process.env.FACEBOOK_ID,
       google: process.env.GOOGLE_ID,
-      github: process.env.GITHUB_ID
+      github: process.env.GITHUB_ID,
     },
     $default: {
       facebook: process.env.FACEBOOK_ID,
       google: process.env.GOOGLE_ID,
-      github: process.env.GITHUB_ID
-    }
+      github: process.env.GITHUB_ID,
+    },
   },
   socialSecrets: {
     $filter: 'env',
     production: {
       facebook: process.env.FACEBOOK_SECRET,
       google: process.env.GOOGLE_SECRET,
-      github: process.env.GITHUB_SECRET
+      github: process.env.GITHUB_SECRET,
     },
     $default: {
       facebook: process.env.FACEBOOK_SECRET,
       google: process.env.GOOGLE_SECRET,
-      github: process.env.GITHUB_SECRET
-    }
+      github: process.env.GITHUB_SECRET,
+    },
   },
   ipstackAccessKey: {
     $filter: 'env',
     production: process.env.IPSTACK_ACCESS_KEY,
-    $default: process.env.IPSTACK_ACCESS_KEY
+    $default: process.env.IPSTACK_ACCESS_KEY,
   },
   // Enable TLS for social login
   socialSecure: {
     $filter: 'env',
     production: true,
-    $default: false
+    $default: false,
   },
   nodemailer: {
     $filter: 'env',
@@ -134,8 +134,8 @@ const config = {
       secure: true,
       auth: {
         user: 'appyhapi@gmail.com',
-        pass: process.env.SMTP_PASSWORD
-      }
+        pass: process.env.SMTP_PASSWORD,
+      },
     },
     $default: {
       host: 'smtp.gmail.com',
@@ -143,9 +143,9 @@ const config = {
       secure: true,
       auth: {
         user: 'appyhapi@gmail.com',
-        pass: process.env.SMTP_PASSWORD
-      }
-    }
+        pass: process.env.SMTP_PASSWORD,
+      },
+    },
   },
   /**
    * defaultEmail:
@@ -155,41 +155,41 @@ const config = {
   defaultEmail: {
     $filter: 'env',
     production: null,
-    $default: 'appyhapi@gmail.com'
+    $default: 'appyhapi@gmail.com',
   },
   system: {
     $filter: 'env',
     production: {
       fromAddress: {
         name: 'appy',
-        address: 'appyhapi@gmail.com'
+        address: 'appyhapi@gmail.com',
       },
       toAddress: {
         name: 'appy',
-        address: 'appyhapi@gmail.com'
-      }
+        address: 'appyhapi@gmail.com',
+      },
     },
     $default: {
       fromAddress: {
         name: 'appy',
-        address: 'appyhapi@gmail.com'
+        address: 'appyhapi@gmail.com',
       },
       toAddress: {
         name: 'appy',
-        address: 'appyhapi@gmail.com'
-      }
-    }
+        address: 'appyhapi@gmail.com',
+      },
+    },
   },
   clientURL: {
     $filter: 'env',
     production: process.env.CLIENT_URI,
-    $default: process.env.CLIENT_URI
+    $default: process.env.CLIENT_URI,
   },
   // If true, the 'demoAuth' policy is used to restrict certain actions.
   enableDemoAuth: {
     $filter: 'env',
     production: true,
-    $default: false
+    $default: false,
   },
   // This is the config object passed into the rest-hapi plugin during registration:
   // https://github.com/JKHeadley/rest-hapi#configuration
@@ -199,12 +199,12 @@ const config = {
       URI: {
         $filter: 'env',
         production: process.env.MONGODB_URI,
-        $default: process.env.MONGODB_URI
-      }
+        $default: process.env.MONGODB_URI,
+      },
     },
     cors: {
       additionalHeaders: ['X-Access-Token', 'X-Refresh-Token'],
-      additionalExposedHeaders: ['X-Access-Token', 'X-Refresh-Token']
+      additionalExposedHeaders: ['X-Access-Token', 'X-Refresh-Token'],
     },
     absoluteModelPath: true,
     modelPath: path.join(__dirname, '/../server/models'),
@@ -215,102 +215,102 @@ const config = {
     swaggerHost: {
       $filter: 'env',
       production: process.env.SERVER_HOST,
-      $default: `${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`
+      $default: `${process.env.SERVER_HOST}:${process.env.SERVER_PORT}`,
     },
     authStrategy: {
       $filter: 'env',
       production: constants.AUTH_STRATEGIES.REFRESH,
-      $default: constants.AUTH_STRATEGIES.REFRESH
+      $default: constants.AUTH_STRATEGIES.REFRESH,
     },
     enableWhereQueries: {
       $filter: 'env',
       production: false,
-      $default: false
+      $default: false,
     },
     enableQueryValidation: {
       $filter: 'env',
       production: true,
-      $default: true
+      $default: true,
     },
     enablePayloadValidation: {
       $filter: 'env',
       production: true,
-      $default: true
+      $default: true,
     },
     enableResponseValidation: {
       $filter: 'env',
       production: true,
-      $default: true
+      $default: true,
     },
     enableTextSearch: {
       $filter: 'env',
       production: true,
-      $default: true
+      $default: true,
     },
     enableSoftDelete: {
       $filter: 'env',
       production: true,
-      $default: true
+      $default: true,
     },
     filterDeletedEmbeds: {
       $filter: 'env',
       production: true,
-      $default: true
+      $default: true,
     },
     enablePolicies: {
       $filter: 'env',
       production: true,
-      $default: true
+      $default: true,
     },
     enableDuplicateFields: {
       $filter: 'env',
       production: true,
-      $default: true
+      $default: true,
     },
     trackDuplicatedFields: {
       $filter: 'env',
       production: true,
-      $default: true
+      $default: true,
     },
     enableDocumentScopes: {
       $filter: 'env',
       production: true,
-      $default: true
+      $default: true,
     },
     enableSwaggerHttps: {
       $filter: 'env',
       production: true,
-      $default: false
+      $default: false,
     },
     generateScopes: {
       $filter: 'env',
       production: true,
-      $default: true
+      $default: true,
     },
     logRoutes: {
       $filter: 'env',
       production: false,
-      $default: true
+      $default: true,
     },
     logScopes: {
       $filter: 'env',
       production: false,
-      $default: false
+      $default: false,
     },
     loglevel: {
       $filter: 'env',
       production: 'ERROR',
-      $default: 'DEBUG'
-    }
-  }
-}
+      $default: 'DEBUG',
+    },
+  },
+};
 
-const store = new Confidence.Store(config)
+const store = new Confidence.Store(config);
 
 exports.get = function(key) {
-  return store.get(key, criteria)
-}
+  return store.get(key, criteria);
+};
 
 exports.meta = function(key) {
-  return store.meta(key, criteria)
-}
+  return store.meta(key, criteria);
+};

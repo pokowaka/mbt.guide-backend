@@ -1,22 +1,22 @@
-'use strict'
+'use strict';
 
 // const Chalk = require('chalk')
 
 module.exports = function(server, mongoose, logger) {
   // Create the notification subscription
-  ;(function() {
+  (function() {
     // const Log = logger.bind(Chalk.magenta('Notification Subscription'))
 
     server.subscription('/notification/{userId}', {
       filter: function(path, message, options) {
-        return true
+        return true;
       },
       auth: {
         scope: ['root', 'receiveNotifications', '!-receiveNotifications'],
         entity: 'user',
-        index: true
+        index: true,
       },
-      onSubscribe: function(socket, path, params) {}
-    })
-  })()
-}
+      onSubscribe: function(socket, path, params) {},
+    });
+  })();
+};

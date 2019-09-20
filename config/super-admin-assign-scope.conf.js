@@ -72,5 +72,5 @@ module.exports = [
   'updateSession',
   // AuditLog permissions
   'deleteAuditLog',
-  'updateAuditLog'
-]
+  'updateAuditLog',
+];

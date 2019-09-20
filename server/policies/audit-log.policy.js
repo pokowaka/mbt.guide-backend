@@ -1,12 +1,12 @@
-'use strict'
+'use strict';
 
-const _ = require('lodash')
-const pickDeep = require('lodash-pickdeep')
-const errorHelper = require('../utilities/error-helper')
+const _ = require('lodash');
+const pickDeep = require('lodash-pickdeep');
+const errorHelper = require('../utilities/error-helper');
 
-_.mixin({ pickDeep: pickDeep }, { chain: true })
+_.mixin({ pickDeep: pickDeep }, { chain: true });
 
-const internals = {}
+const internals = {};
 
 /**
  * Policy to log actions.
@@ -16,20 +16,20 @@ const internals = {}
  * @returns {auditLog}
  */
 internals.auditLog = function(mongoose, options, logger) {
-  const Log = logger.bind('auditLog')
+  const Log = logger.bind('auditLog');
 
   const auditLog = async function auditLog(request, h) {
     try {
-      const AuditLog = mongoose.model('auditLog')
+      const AuditLog = mongoose.model('auditLog');
 
-      const ipAddress = request.server.methods.getIP(request)
-      let userId = _.get(request.auth.credentials, 'user._id')
+      const ipAddress = request.server.methods.getIP(request);
+      let userId = _.get(request.auth.credentials, 'user._id');
 
-      let payload = {}
+      let payload = {};
       if (options.payloadFilter) {
-        payload = _.pickDeep(request.payload, options.payloadFilter)
+        payload = _.pickDeep(request.payload, options.payloadFilter);
       } else {
-        payload = request.payload
+        payload = request.payload;
       }
 
       const document = {
@@ -45,25 +45,22 @@ internals.auditLog = function(mongoose, options, logger) {
         params: _.isEmpty(request.params) ? null : request.params,
         result: request.response.source || null,
         isError: _.isError(request.response),
-        statusCode:
-          request.response.statusCode || request.response.output.statusCode,
-        responseMessage: request.response.output
-          ? request.response.output.payload.message
-          : null,
-        ipAddress
-      }
+        statusCode: request.response.statusCode || request.response.output.statusCode,
+        responseMessage: request.response.output ? request.response.output.payload.message : null,
+        ipAddress,
+      };
 
-      await AuditLog.create(document)
+      await AuditLog.create(document);
 
-      return h.continue
+      return h.continue;
     } catch (err) {
-      errorHelper.handleError(err, Log)
+      errorHelper.handleError(err, Log);
     }
-  }
+  };
 
-  auditLog.applyPoint = 'onPostHandler'
-  return auditLog
-}
-internals.auditLog.applyPoint = 'onPostHandler'
+  auditLog.applyPoint = 'onPostHandler';
+  return auditLog;
+};
+internals.auditLog.applyPoint = 'onPostHandler';
 
-module.exports = internals.auditLog
+module.exports = internals.auditLog;

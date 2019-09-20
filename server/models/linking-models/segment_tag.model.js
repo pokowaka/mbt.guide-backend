@@ -1,7 +1,7 @@
-var mongoose = require('mongoose')
+var mongoose = require('mongoose');
 
 module.exports = function() {
-  var Types = mongoose.Schema.Types
+  var Types = mongoose.Schema.Types;
 
   var Model = {
     Schema: {
@@ -10,11 +10,11 @@ module.exports = function() {
         required: true,
         default: 6,
         min: 1,
-        max: 11
-      }
+        max: 11,
+      },
     },
-    modelName: 'segment_tag'
-  }
+    modelName: 'segment_tag',
+  };
 
-  return Model
-}
+  return Model;
+};
