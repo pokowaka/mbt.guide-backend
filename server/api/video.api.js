@@ -34,14 +34,16 @@ module.exports = function(server, mongoose, logger) {
 
         const deletedSegments = _.differenceBy(video.segments, segments, 'segmentId');
 
-        const newSegments = _.differenceBy(segments, video.segments, 'segmentId').map(s => ({
-          segmentId: s.segmentId,
-          video: s.video,
-          start: s.start,
-          end: s.end,
-          title: s.title,
-          description: s.description,
-        }));
+        const newSegments = _.differenceBy(segments, video.segments, 'segmentId')
+          .filter(s => s.pristine === false)
+          .map(s => ({
+            segmentId: s.segmentId,
+            video: s.video,
+            start: s.start,
+            end: s.end,
+            title: s.title,
+            description: s.description,
+          }));
 
         const oldSegments = _.differenceBy(segments, newSegments, 'segmentId');
 
