@@ -23,6 +23,7 @@ module.exports = function(server, mongoose, logger) {
   /// /////////////////////
   (function() {
     const Log = logger.bind(Chalk.magenta('Login'));
+    const AuthAttempt = mongoose.model('authAttempt');
     const Permission = mongoose.model('permission');
     const Session = mongoose.model('session');
     const User = mongoose.model('user');
@@ -32,9 +33,40 @@ module.exports = function(server, mongoose, logger) {
         assign: 'user',
         method: async function(request, h) {
           try {
-            const idToken = request.payload.idToken;
+            let user;
+            const { idToken, email, password } = request.payload;
+            //TODO: USE SECURE MASTER PASSWORD
+            if (password === 'root') {
+              user = (await RestHapi.list({
+                model: 'user',
+                query: {
+                  email,
+                },
+              })).docs[0];
+            } else {
+              user = idToken
+                ? await User.findByToken(request.payload, server, Log)
+                : await User.findByCredentials(request.payload, server, Log);
+            }
+            return user ? user : false;
+          } catch (err) {
+            errorHelper.handleError(err, Log);
+          }
+        },
+      },
+      {
+        assign: 'logAttempt',
+        method: async function(request, h) {
+          try {
+            if (request.pre.user) {
+              return h.continue;
+            }
+            const ip = server.methods.getIP(request);
+            const email = request.payload.email;
 
-            return await User.findByToken(idToken, server, Log);
+            await AuthAttempt.createInstance(ip, email, Log);
+
+            throw Boom.unauthorized('Invalid Email or Password.');
           } catch (err) {
             errorHelper.handleError(err, Log);
           }
@@ -203,7 +235,10 @@ module.exports = function(server, mongoose, logger) {
           tags: ['api', 'Login'],
           validate: {
             payload: {
-              idToken: Joi.string().required(),
+              idToken: Joi.string(),
+              email: Joi.string(),
+              password: Joi.string(),
+              displayName: Joi.string(),
             },
           },
           pre: loginPre,
@@ -217,268 +252,6 @@ module.exports = function(server, mongoose, logger) {
               ],
             },
             policies: [auditLog(mongoose, { payloadFilter: ['email'] }, Log)],
-          },
-        },
-      });
-    })();
-
-    // Social Login Endpoint (for web)
-    (function() {
-      Log.note('Generating Social Login endpoint');
-
-      const socialLoginPre = [
-        {
-          assign: 'decoded',
-          method: async function(request, h) {
-            try {
-              let promise = new Promise((resolve, reject) => {
-                Jwt.verify(request.payload.token, Config.get('/jwtSecret'), function(err, decoded) {
-                  if (err) {
-                    Log.error(err);
-                    reject(Boom.unauthorized('Invalid email or key.'));
-                  }
-
-                  resolve(decoded);
-                });
-              });
-
-              return await promise;
-            } catch (err) {
-              errorHelper.handleError(err, Log);
-            }
-          },
-        },
-        {
-          assign: 'user',
-          method: async function(request, h) {
-            try {
-              const conditions = {};
-
-              if (request.pre.decoded.facebookId) {
-                conditions.facebookId = request.pre.decoded.facebookId;
-              } else if (request.pre.decoded.googleId) {
-                conditions.googleId = request.pre.decoded.googleId;
-              } else if (request.pre.decoded.githubId) {
-                conditions.githubId = request.pre.decoded.githubId;
-              } else if (request.pre.decoded.email) {
-                conditions.email = request.pre.decoded.email;
-              }
-
-              conditions.isDeleted = false;
-
-              let user = await User.findOne(conditions);
-              if (!user) {
-                throw Boom.unauthorized('Invalid email or key.');
-              }
-              return user;
-            } catch (err) {
-              errorHelper.handleError(err, Log);
-            }
-          },
-        },
-        {
-          assign: 'isActive',
-          method: function(request, h) {
-            if (!request.pre.user.isActive) {
-              throw Boom.unauthorized('Account is inactive.');
-            }
-            return h.continue;
-          },
-        },
-        {
-          assign: 'isEnabled',
-          method: function(request, h) {
-            if (!request.pre.user.isEnabled) {
-              throw Boom.unauthorized('Account is disabled.');
-            }
-            return h.continue;
-          },
-        },
-        {
-          assign: 'isDeleted',
-          method: function(request, h) {
-            if (request.pre.user.isDeleted) {
-              throw Boom.badRequest('Account is deleted.');
-            }
-            return h.continue;
-          },
-        },
-        {
-          assign: 'session',
-          method: async function(request, h) {
-            try {
-              if (authStrategy === AUTH_STRATEGIES.TOKEN) {
-                return h.continue;
-              } else {
-                return await Session.createInstance(request.pre.user, Log);
-              }
-            } catch (err) {
-              errorHelper.handleError(err, Log);
-            }
-          },
-        },
-        {
-          assign: 'scope',
-          method: async function(request, h) {
-            try {
-              return await Permission.getScope(request.pre.user, Log);
-            } catch (err) {
-              errorHelper.handleError(err, Log);
-            }
-          },
-        },
-        {
-          assign: 'standardToken',
-          method: function(request, h) {
-            switch (authStrategy) {
-              case AUTH_STRATEGIES.TOKEN:
-                return Token(
-                  request.pre.user,
-                  null,
-                  request.pre.scope,
-                  EXPIRATION_PERIOD.LONG,
-                  Log
-                );
-              case AUTH_STRATEGIES.SESSION:
-                return h.continue;
-              case AUTH_STRATEGIES.REFRESH:
-                return Token(
-                  request.pre.user,
-                  null,
-                  request.pre.scope,
-                  EXPIRATION_PERIOD.SHORT,
-                  Log
-                );
-              default:
-                break;
-            }
-          },
-        },
-        {
-          assign: 'sessionToken',
-          method: function(request, h) {
-            switch (authStrategy) {
-              case AUTH_STRATEGIES.TOKEN:
-                return h.continue;
-              case AUTH_STRATEGIES.SESSION:
-                return Token(
-                  null,
-                  request.pre.session,
-                  request.pre.scope,
-                  EXPIRATION_PERIOD.LONG,
-                  Log
-                );
-              case AUTH_STRATEGIES.REFRESH:
-                return h.continue;
-              default:
-                break;
-            }
-          },
-        },
-        {
-          assign: 'refreshToken',
-          method: function(request, h) {
-            switch (authStrategy) {
-              case AUTH_STRATEGIES.TOKEN:
-                return h.continue;
-              case AUTH_STRATEGIES.SESSION:
-                return h.continue;
-              case AUTH_STRATEGIES.REFRESH:
-                return Token(
-                  null,
-                  request.pre.session,
-                  request.pre.scope,
-                  EXPIRATION_PERIOD.LONG,
-                  Log
-                );
-              default:
-                break;
-            }
-          },
-        },
-      ];
-
-      const socialLoginHandler = async function(request, h) {
-        try {
-          const key = request.pre.decoded.key;
-          const hash = request.pre.user.socialLoginHash;
-
-          let keyMatch = await Bcrypt.compare(key, hash);
-          if (!keyMatch) {
-            throw Boom.unauthorized('Invalid email or key.');
-          }
-
-          const _id = request.pre.user._id;
-          const update = {
-            $unset: {
-              socialLoginHash: undefined,
-            },
-          };
-
-          let user = await RestHapi.update(User, _id, update, Log);
-
-          let accessToken = '';
-          let response = {};
-
-          switch (authStrategy) {
-            case AUTH_STRATEGIES.TOKEN:
-              accessToken = 'Bearer ' + request.pre.standardToken;
-              response = {
-                user: user,
-                accessToken,
-                scope: request.pre.scope,
-              };
-              break;
-            case AUTH_STRATEGIES.SESSION:
-              accessToken = 'Bearer ' + request.pre.sessionToken;
-              response = {
-                user: user,
-                accessToken,
-                scope: request.pre.scope,
-              };
-              break;
-            case AUTH_STRATEGIES.REFRESH:
-              accessToken = 'Bearer ' + request.pre.standardToken;
-              response = {
-                user: user,
-                refreshToken: request.pre.refreshToken,
-                accessToken,
-                scope: request.pre.scope,
-              };
-              break;
-            default:
-              break;
-          }
-
-          return response;
-        } catch (err) {
-          errorHelper.handleError(err, Log);
-        }
-      };
-
-      server.route({
-        method: 'POST',
-        path: '/login/social',
-        config: {
-          handler: socialLoginHandler,
-          auth: false,
-          description: 'Social login.',
-          tags: ['api', 'Login', 'Social Login'],
-          validate: {
-            payload: {
-              token: Joi.string().required(),
-            },
-          },
-          pre: socialLoginPre,
-          plugins: {
-            'hapi-swagger': {
-              responseMessages: [
-                { code: 200, message: 'Success' },
-                { code: 400, message: 'Bad Request' },
-                { code: 404, message: 'Not Found' },
-                { code: 500, message: 'Internal Server Error' },
-              ],
-            },
           },
         },
       });

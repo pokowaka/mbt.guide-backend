@@ -155,7 +155,7 @@ module.exports = function(server, mongoose, logger) {
           const invitee = request.auth.credentials
             ? request.auth.credentials.user
             : {
-                firstName: 'appy',
+                firstName: 'mbt.guide',
                 lastName: 'Admin',
               };
 

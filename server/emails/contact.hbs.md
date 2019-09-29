@@ -8,4 +8,4 @@
 
 Love,
 
-The appy Team
+The mbt.guide Team

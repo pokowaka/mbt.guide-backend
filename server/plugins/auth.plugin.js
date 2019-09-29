@@ -15,7 +15,7 @@ const socialSecrets = Config.get('/socialSecrets');
 const EXPIRATION_PERIOD = Config.get('/constants/EXPIRATION_PERIOD');
 const isSecure = Config.get('/socialSecure');
 
-const logger = RestHapi.getLogger('appy');
+const logger = RestHapi.getLogger('mbt.guide');
 
 const internals = {};
 

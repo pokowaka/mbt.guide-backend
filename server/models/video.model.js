@@ -33,6 +33,7 @@ module.exports = function(mongoose) {
   Schema.statics = {
     collectionName: modelName,
     routeOptions: {
+      readAuth: false,
       associations: {
         segments: {
           type: 'ONE_MANY',

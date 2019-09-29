@@ -61,12 +61,12 @@ const constants = {
     FOR_IP_AND_USER: 5,
   },
   LOCKOUT_PERIOD: 30, // in units of minutes
-  API_TITLE: 'appy API',
-  WEB_TITLE: 'appy Admin',
+  API_TITLE: 'mbt.guide API',
+  WEB_TITLE: 'mbt.guide',
 };
 
 const config = {
-  $meta: 'This file configures the appy API.',
+  $meta: 'This file configures the mbt.guide API.',
   constants: constants,
   projectName: constants.API_TITLE,
   port: {
@@ -76,8 +76,8 @@ const config = {
   },
   S3BucketName: {
     $filter: 'env',
-    production: 'appy-cdn',
-    $default: 'appy-cdn',
+    production: 'mbt.guide-cdn',
+    $default: 'mbt.guide-cdn',
   },
   jwtSecret: {
     $filter: 'env',
@@ -161,21 +161,21 @@ const config = {
     $filter: 'env',
     production: {
       fromAddress: {
-        name: 'appy',
+        name: 'mbt.guide',
         address: 'appyhapi@gmail.com',
       },
       toAddress: {
-        name: 'appy',
+        name: 'mbt.guide',
         address: 'appyhapi@gmail.com',
       },
     },
     $default: {
       fromAddress: {
-        name: 'appy',
+        name: 'mbt.guide',
         address: 'appyhapi@gmail.com',
       },
       toAddress: {
-        name: 'appy',
+        name: 'mbt.guide',
         address: 'appyhapi@gmail.com',
       },
     },

@@ -3,6 +3,7 @@
 const Joi = require('joi');
 const Chalk = require('../../node_modules/chalk');
 const RestHapi = require('../../node_modules/rest-hapi');
+const auditLog = require('../policies/audit-log.policy');
 
 const _ = require('lodash');
 
@@ -146,6 +147,7 @@ module.exports = function(server, mongoose, logger) {
               { code: 500, message: 'Internal Server Error' },
             ],
           },
+          policies: [auditLog(mongoose, {}, Log)],
         },
       },
     });

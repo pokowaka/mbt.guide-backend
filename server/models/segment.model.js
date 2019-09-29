@@ -46,6 +46,7 @@ module.exports = function(mongoose) {
   Schema.statics = {
     collectionName: modelName,
     routeOptions: {
+      readAuth: false,
       documentScope: {
         rootScope: ['root'],
       },
@@ -54,7 +55,7 @@ module.exports = function(mongoose) {
         video: {
           type: 'MANY_ONE',
           model: 'video',
-          duplicate: ['title', 'ytId'],
+          duplicate: ['title', 'ytId', 'duration'],
         },
         owner: {
           type: 'MANY_ONE',

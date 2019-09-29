@@ -338,7 +338,7 @@ module.exports = function(server, mongoose, logger) {
             password = Uuid.v4();
             user = {
               isActive: true,
-              email: githubProfile.email || 'noreply@appy.io',
+              email: githubProfile.email || 'noreply@mbt.guide',
               firstName,
               lastName,
               profileImageUrl: githubProfile.raw.avatar_url,

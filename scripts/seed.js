@@ -41,7 +41,6 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
 
     faker.seed(4997);
 
-    const password = 'root';
     const pin = '1234';
 
     let roles = [];
@@ -131,11 +130,6 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
         assignScope: [USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN],
       },
       {
-        name: 'resetPasswordNoPin',
-        description: 'Can allow a user to reset their password without a PIN',
-        assignScope: [USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN],
-      },
-      {
         name: 'readUserScope',
         description: "Can read a user's scope",
         assignScope: [USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN],
@@ -216,11 +210,8 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
         firstName: faker.name.firstName(),
         lastName: faker.name.lastName(),
         email: 'test@user.com',
-        title: faker.name.jobTitle(),
         // profileImageUrl: 'https://www.gravatar.com/avatar/' + Mongoose.Types.ObjectId().toString() + '?r=PG&d=robohash',
         profileImageUrl: faker.image.avatar(),
-        password: password,
-        pin: pin,
         role: roles[0]._id,
         isActive: true,
       },
@@ -228,11 +219,8 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
         firstName: faker.name.firstName(),
         lastName: faker.name.lastName(),
         email: 'test@readonlyuser.com',
-        title: faker.name.jobTitle(),
         // profileImageUrl: 'https://www.gravatar.com/avatar/' + Mongoose.Types.ObjectId().toString() + '?r=PG&d=robohash',
         profileImageUrl: faker.image.avatar(),
-        password: password,
-        pin: pin,
         role: roles[0]._id,
         isActive: true,
       },
@@ -240,11 +228,8 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
         firstName: faker.name.firstName(),
         lastName: faker.name.lastName(),
         email: 'test@admin.com',
-        title: faker.name.jobTitle(),
         // profileImageUrl: 'https://www.gravatar.com/avatar/' + Mongoose.Types.ObjectId().toString() + '?r=PG&d=robohash',
         profileImageUrl: faker.image.avatar(),
-        password: password,
-        pin: pin,
         role: roles[1]._id,
         isActive: true,
       },
@@ -252,11 +237,8 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
         firstName: faker.name.firstName(),
         lastName: faker.name.lastName(),
         email: 'test@readonlyadmin.com',
-        title: faker.name.jobTitle(),
         // profileImageUrl: 'https://www.gravatar.com/avatar/' + Mongoose.Types.ObjectId().toString() + '?r=PG&d=robohash',
         profileImageUrl: faker.image.avatar(),
-        password: password,
-        pin: pin,
         role: roles[1]._id,
         isActive: true,
       },
@@ -264,11 +246,8 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
         firstName: faker.name.firstName(),
         lastName: faker.name.lastName(),
         email: 'test@editoradmin.com',
-        title: faker.name.jobTitle(),
         // profileImageUrl: 'https://www.gravatar.com/avatar/' + Mongoose.Types.ObjectId().toString() + '?r=PG&d=robohash',
         profileImageUrl: faker.image.avatar(),
-        password: password,
-        pin: pin,
         role: roles[1]._id,
         isActive: true,
       },
@@ -276,11 +255,8 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
         firstName: faker.name.firstName(),
         lastName: faker.name.lastName(),
         email: 'test@superuseradmin.com',
-        title: faker.name.jobTitle(),
         // profileImageUrl: 'https://www.gravatar.com/avatar/' + Mongoose.Types.ObjectId().toString() + '?r=PG&d=robohash',
         profileImageUrl: faker.image.avatar(),
-        password: password,
-        pin: pin,
         role: roles[1]._id,
         isActive: true,
       },
@@ -288,11 +264,8 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
         firstName: faker.name.firstName(),
         lastName: faker.name.lastName(),
         email: 'test@superadmin.com',
-        title: faker.name.jobTitle(),
         // profileImageUrl: 'https://www.gravatar.com/avatar/' + Mongoose.Types.ObjectId().toString() + '?r=PG&d=robohash',
         profileImageUrl: faker.image.avatar(),
-        password: password,
-        pin: pin,
         role: roles[2]._id,
         isActive: true,
       },
@@ -312,46 +285,6 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
 
     let result = await server.inject(injectOptions);
     users = result.result;
-    Log.log('seeding visitors');
-
-    promises = [];
-
-    let addVisitor = function(visitor) {
-      let rand = Math.random();
-
-      let browser = 'Other';
-
-      if (rand > 0 && rand <= 0.4) {
-        browser = 'Chrome';
-      } else if (rand > 0.4 && rand <= 0.7) {
-        browser = 'Firefox';
-      } else if (rand > 0.7 && rand <= 0.8) {
-        browser = 'Safari';
-      } else if (rand > 0.8 && rand <= 0.95) {
-        browser = 'IE';
-      }
-
-      visitor.browser = browser;
-
-      if (visitor.error || visitor.message || !visitor.ip) {
-        Log.debug('iplocation failed:', visitor);
-      } else {
-        return RestHapi.create(models.visitor, visitor, Log);
-      }
-    };
-
-    // Specify the iplocation hosts to prevent issues (Ex: docker cant ping "https://ipaip.co/" by default)
-    // let hosts = ['freegeoip.net', 'ipapi.co']
-    // NOTE: Sign up for free access key at https://ipstack.com/
-    let host =
-      'http://api.ipstack.com/*?access_key=' + Config.get('/ipstackAccessKey') + '&format=1';
-
-    for (let i = 0; i <= 10; i++) {
-      let ip = faker.internet.ip();
-      promises.push(iplocation(ip, [host]).then(addVisitor));
-    }
-
-    await Promise.all(promises);
 
     Log.log('setting associations');
 

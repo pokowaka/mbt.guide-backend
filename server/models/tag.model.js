@@ -17,6 +17,7 @@ module.exports = function(mongoose) {
   Schema.statics = {
     collectionName: modelName,
     routeOptions: {
+      readAuth: false,
       associations: {
         segments: {
           type: 'MANY_MANY',
