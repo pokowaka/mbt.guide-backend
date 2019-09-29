@@ -2,6 +2,7 @@
 
 const Bcrypt = require('bcryptjs');
 const RestHapi = require('rest-hapi');
+const Boom = require('boom');
 const errorHelper = require('../utilities/error-helper');
 
 const permissionAuth = require('../policies/permission-auth.policy');
@@ -16,14 +17,25 @@ const demoAuth = enableDemoAuth ? 'demoAuth' : null;
 
 const USER_ROLES = Config.get('/constants/USER_ROLES');
 
-const admin = require('../../node_modules/firebase-admin');
+const firebase = require('firebase/app');
+require('firebase/auth');
+require('firebase/firestore');
+const admin = require('firebase-admin');
 
-const serviceAccount = require('../../private-keys/mbt-guide-d9b1b-firebase-adminsdk-lcskb-0c3507c9e9.json');
+const serviceAccount = require('../../private-keys/mbt-guide-b41e8f3aa8b4.json');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: 'https://mbt-guide-d9b1b.firebaseio.com',
 });
+
+//TODO: use env vars
+const firebaseConfig = require('../../config/firebaseConfig');
+
+const firebaseApp = firebase.initializeApp(firebaseConfig);
+
+//TODO: Import test users
+const testUsers = ['test@superadmin.com', 'test@admin.com'];
 
 module.exports = function(mongoose) {
   const modelName = 'user';
@@ -39,6 +51,7 @@ module.exports = function(mongoose) {
         required: true,
       },
       email: {
+        unique: true,
         type: Types.String,
         required: true,
         stringType: 'email',
@@ -60,15 +73,6 @@ module.exports = function(mongoose) {
         type: Types.Boolean,
         allowOnUpdate: false,
         default: true,
-      },
-      resetPassword: {
-        hash: {
-          type: Types.String,
-        },
-        allowOnCreate: false,
-        allowOnUpdate: false,
-        exclude: true,
-        type: Types.Object,
       },
     },
     { collection: modelName }
@@ -196,16 +200,31 @@ module.exports = function(mongoose) {
         errorHelper.handleError(err, Log);
       }
     },
-
-    findByToken: async function(idToken, server, logger) {
+    findByToken: async function(payload, server, logger) {
       const Log = logger.bind();
 
       const Role = mongoose.model('role');
       try {
-        // TODO: handle invalid token
-        const firebaseUser = await admin.auth().verifyIdToken(idToken);
+        let { idToken, email, password, displayName } = payload;
+
+        if (!idToken && (!email || !password)) {
+          throw Boom.badRequest('Either idToken or email and password required');
+        }
+
+        let firebaseUser;
+
+        try {
+          firebaseUser = idToken ? await admin.auth().verifyIdToken(idToken) : { email, password };
+        } catch (err) {
+          throw Boom.unauthorized('Invalid idToken');
+        }
+
+        console.log('PAYLOAD:', payload);
+        console.log('FIRE USER:', firebaseUser);
+        console.log('FIRE:', firebaseUser.firebase);
 
         const self = this;
+        let user;
 
         const query = {
           email: firebaseUser.email,
@@ -213,20 +232,24 @@ module.exports = function(mongoose) {
 
         let mongooseQuery = self.findOne(query);
 
-        let user = await mongooseQuery.lean();
+        user = await mongooseQuery.lean();
 
         // If user doesn't exist, create one
         if (!user) {
+          if (!firebaseUser.name && !displayName) {
+            throw Boom.badRequest('Display name required.');
+          }
+
           const userRole = (await RestHapi.list(Role, { name: USER_ROLES.USER }, Log)).docs[0];
 
-          const [firstName, lastName] = firebaseUser.name.split(' ');
+          const [firstName, lastName] = (firebaseUser.name || displayName).split(' ');
 
           user = {
             firstName,
             lastName,
             email: firebaseUser.email,
             profileImageUrl: firebaseUser.picture,
-            isActive: true,
+            isActive: firebaseUser.email_verified,
             role: userRole._id,
           };
 
@@ -237,10 +260,64 @@ module.exports = function(mongoose) {
           });
         }
 
+        user = await this.updateActive({ firebaseUser, user });
+
         return user;
       } catch (err) {
         errorHelper.handleError(err, Log);
       }
+    },
+    findByCredentials: async function(payload, server, logger) {
+      const Log = logger.bind();
+      try {
+        const self = this;
+        const { email, password } = payload;
+
+        if (!email || !password) {
+          throw Boom.badRequest('Either idToken or email and password required');
+        }
+
+        let result;
+
+        try {
+          result = await firebaseApp.auth().signInWithEmailAndPassword(email, password);
+        } catch (err) {
+          //TODO: If test user, check if error is because user doesn't exist and if so, create the user (in firebase)
+          Log.error(err);
+          return false;
+        }
+
+        const query = {
+          email: result.user.email.toLowerCase(),
+          isDeleted: false,
+        };
+
+        let mongooseQuery = self.findOne(query);
+
+        let user = await mongooseQuery.lean();
+
+        user = await this.updateActive({ firebaseUser: result.user, user });
+
+        return user ? user : false;
+      } catch (err) {
+        errorHelper.handleError(err, Log);
+      }
+    },
+    updateActive: async function({ firebaseUser, user }) {
+      if (
+        user &&
+        user.isActive !== firebaseUser.email_verified &&
+        !testUsers.includes(user.email)
+      ) {
+        user = await RestHapi.update({
+          model: 'user',
+          _id: user._id,
+          payload: {
+            isActive: firebaseUser.email_verified,
+          },
+        });
+      }
+      return user;
     },
   };
 
