@@ -17,21 +17,36 @@ const demoAuth = enableDemoAuth ? 'demoAuth' : null;
 
 const USER_ROLES = Config.get('/constants/USER_ROLES');
 
+const awsAccessKeyId = Config.get('/awsAccessKeyId');
+const awsSecretAccessKey = Config.get('/awsSecretAccessKey');
+
 const firebase = require('firebase/app');
 require('firebase/auth');
 require('firebase/firestore');
 const admin = require('firebase-admin');
+const AWS = require('aws-sdk');
 
-const serviceAccount = require('../../private-keys/mbt-guide-b41e8f3aa8b4.json');
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: 'https://mbt-guide-d9b1b.firebaseio.com',
+AWS.config.update({
+  accessKeyId: awsAccessKeyId,
+  secretAccessKey: awsSecretAccessKey,
+});
+const s3 = new AWS.S3();
+s3.getObject({ Bucket: 'mbt-guide-private-keys', Key: 'mbt-guide-b41e8f3aa8b4.json' }, function(
+  error,
+  data
+) {
+  if (error != null) {
+    console.error('Error loading firebase admin cert:', error);
+  } else {
+    const serviceAccount = JSON.parse(data.Body.toString());
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      databaseURL: 'https://mbt-guide-d9b1b.firebaseio.com',
+    });
+  }
 });
 
-//TODO: use env vars
 const firebaseConfig = require('../../config/firebaseConfig');
-
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 
 //TODO: Import test users

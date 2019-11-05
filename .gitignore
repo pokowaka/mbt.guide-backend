@@ -388,6 +388,6 @@ Temporary Items
 =======
 # Local
 .env
-private-keys
+private_keys
 
 node_modules

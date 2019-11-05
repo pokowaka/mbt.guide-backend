@@ -9,11 +9,7 @@ const Config = require('../../config');
 const Token = require('../utilities/create-token');
 
 const AUTH_STRATEGIES = Config.get('/constants/AUTH_STRATEGIES');
-const socialPassword = Config.get('/socialPassword');
-const socialIds = Config.get('/socialIds');
-const socialSecrets = Config.get('/socialSecrets');
 const EXPIRATION_PERIOD = Config.get('/constants/EXPIRATION_PERIOD');
-const isSecure = Config.get('/socialSecure');
 
 const logger = RestHapi.getLogger('mbt.guide');
 
@@ -183,48 +179,6 @@ internals.applyRefreshStrategy = function(server) {
   });
 };
 
-internals.applyFacebookStrategy = function(server) {
-  const facebookOptions = {
-    provider: 'facebook',
-    password: socialPassword,
-    clientId: socialIds.facebook,
-    clientSecret: socialSecrets.facebook,
-    forceHttps: isSecure,
-    isSecure, // Should be set to true (which is the default) in production
-  };
-
-  // Setup the social Facebook login strategy
-  server.auth.strategy('facebook', 'bell', facebookOptions);
-};
-
-internals.applyGoogleStrategy = function(server) {
-  const googleOptions = {
-    provider: 'google',
-    password: socialPassword,
-    clientId: socialIds.google,
-    clientSecret: socialSecrets.google,
-    forceHttps: isSecure,
-    isSecure, // Should be set to true (which is the default) in production
-  };
-
-  // Setup the social Google login strategy
-  server.auth.strategy('google', 'bell', googleOptions);
-};
-
-internals.applyGithubStrategy = function(server) {
-  const googleOptions = {
-    provider: 'github',
-    password: socialPassword,
-    clientId: socialIds.github,
-    clientSecret: socialSecrets.github,
-    forceHttps: isSecure,
-    isSecure, // Should be set to true (which is the default) in production
-  };
-
-  // Setup the social GitHub login strategy
-  server.auth.strategy('github', 'bell', googleOptions);
-};
-
 internals.customForbiddenMessage = function(server) {
   server.ext('onPreResponse', (request, h) => {
     const response = request.response;
@@ -246,10 +200,6 @@ async function register(server, options) {
   const authStrategy = Config.get('/restHapiConfig/authStrategy');
 
   internals.customForbiddenMessage(server);
-
-  internals.applyFacebookStrategy(server);
-  internals.applyGoogleStrategy(server);
-  internals.applyGithubStrategy(server);
 
   switch (authStrategy) {
     case AUTH_STRATEGIES.TOKEN:

@@ -84,11 +84,6 @@ const config = {
     production: process.env.JWT_SECRET,
     $default: process.env.JWT_SECRET,
   },
-  socialPassword: {
-    $filter: 'env',
-    production: process.env.SOCIAL_PASSWORD,
-    $default: process.env.SOCIAL_PASSWORD,
-  },
   socialIds: {
     $filter: 'env',
     production: {
@@ -120,11 +115,20 @@ const config = {
     production: process.env.IPSTACK_ACCESS_KEY,
     $default: process.env.IPSTACK_ACCESS_KEY,
   },
-  // Enable TLS for social login
-  socialSecure: {
+  awsAccessKeyId: {
     $filter: 'env',
-    production: true,
-    $default: false,
+    production: process.env.AWS_ACCESS_KEY_ID,
+    $default: process.env.AWS_ACCESS_KEY_ID,
+  },
+  awsSecretAccessKey: {
+    $filter: 'env',
+    production: process.env.AWS_SECRET_ACCESS_KEY,
+    $default: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+  ipstackAccessKey: {
+    $filter: 'env',
+    production: process.env.IPSTACK_ACCESS_KEY,
+    $default: process.env.IPSTACK_ACCESS_KEY,
   },
   nodemailer: {
     $filter: 'env',
