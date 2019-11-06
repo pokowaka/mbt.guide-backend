@@ -1,0 +1,12 @@
+{
+    "AWSEBDockerrunVersion": "1",
+    "Image": {
+        "Name": "931605268121.dkr.ecr.us-east-2.amazonaws.com/mbt-guide-backend:latest",
+        "Update": "true"
+    },
+    "Ports": [
+        {
+            "ContainerPort": "8080"
+        }
+    ]
+}
