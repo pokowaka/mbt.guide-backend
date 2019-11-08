@@ -84,32 +84,6 @@ const config = {
     production: process.env.JWT_SECRET,
     $default: process.env.JWT_SECRET,
   },
-  socialIds: {
-    $filter: 'env',
-    production: {
-      facebook: process.env.FACEBOOK_ID,
-      google: process.env.GOOGLE_ID,
-      github: process.env.GITHUB_ID,
-    },
-    $default: {
-      facebook: process.env.FACEBOOK_ID,
-      google: process.env.GOOGLE_ID,
-      github: process.env.GITHUB_ID,
-    },
-  },
-  socialSecrets: {
-    $filter: 'env',
-    production: {
-      facebook: process.env.FACEBOOK_SECRET,
-      google: process.env.GOOGLE_SECRET,
-      github: process.env.GITHUB_SECRET,
-    },
-    $default: {
-      facebook: process.env.FACEBOOK_SECRET,
-      google: process.env.GOOGLE_SECRET,
-      github: process.env.GITHUB_SECRET,
-    },
-  },
   ipstackAccessKey: {
     $filter: 'env',
     production: process.env.IPSTACK_ACCESS_KEY,
@@ -124,11 +98,6 @@ const config = {
     $filter: 'env',
     production: process.env.AWS_SECRET_ACCESS_KEY,
     $default: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-  ipstackAccessKey: {
-    $filter: 'env',
-    production: process.env.IPSTACK_ACCESS_KEY,
-    $default: process.env.IPSTACK_ACCESS_KEY,
   },
   nodemailer: {
     $filter: 'env',
@@ -192,7 +161,7 @@ const config = {
   // If true, the 'demoAuth' policy is used to restrict certain actions.
   enableDemoAuth: {
     $filter: 'env',
-    production: true,
+    production: false,
     $default: false,
   },
   // This is the config object passed into the rest-hapi plugin during registration:
