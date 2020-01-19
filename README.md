@@ -1,4 +1,4 @@
-# ![alt tag](https://github.com/JKHeadley/appy/blob/master/assets/appy.png)
+# ![alt tag](https://github.com/cusac/mbt.guide/blob/master/src/routes/Home/logo-wide.png)
 
 
 A user system leveraging [rest-hapi](https://github.com/JKHeadley/rest-hapi) to bootstrap your app.
