@@ -219,7 +219,7 @@ async function register(server, options) {
   const getIP = function(request) {
     // We check the headers first in case the server is behind a reverse proxy.
     // see: https://ypereirareis.github.io/blog/2017/02/15/nginx-real-ip-behind-nginx-reverse-proxy/
-    return request.headers['x-forwarded-for'].split(',')[0] || request.info.remoteAddress;
+    return (request.headers['x-forwarded-for'] || '').split(',')[0] || request.info.remoteAddress;
   };
   server.method('getIP', getIP, {});
 }
