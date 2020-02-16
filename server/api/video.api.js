@@ -56,7 +56,9 @@ module.exports = function(server, mongoose, logger) {
         const updatedSegments = oldSegments
           .filter(s => s.pristine === false)
           .map(s => ({
-            _id: s._id,
+            // We have to grab the _id from the existing segment since the payload segment
+            // might not have one
+            _id: video.segments.filter(vs => vs.segmentId === s.segmentId)[0]._id,
             start: s.start,
             end: s.end,
             title: s.title,
@@ -71,6 +73,8 @@ module.exports = function(server, mongoose, logger) {
             RestHapi.deleteMany({
               model: 'segment',
               payload: deletedSegments.map(s => s._id.toString()),
+              restCall: true,
+              credentials: request.auth.credentials,
             })
           );
 
@@ -92,17 +96,28 @@ module.exports = function(server, mongoose, logger) {
               model: 'segment',
               _id: segment._id,
               payload: segment,
+              restCall: true,
+              credentials: request.auth.credentials,
             })
           );
         }
 
-        await Promise.all(promises);
+        const results = await Promise.all(promises);
+
+        for (const result of results) {
+          if (result && result.error && result.statusCode === 403) {
+            throw Boom.unauthorized(
+              'You are not authorized to edit one or more of the submitted segments'
+            );
+          }
+        }
 
         const savedSegments = (await RestHapi.list({
           model: 'video',
           query: { ytId: videoId, $embed: ['segments.tags'] },
         })).docs[0].segments;
 
+        // Update tags for each segment
         for (const segment of savedSegments) {
           const { tags } = segments.find(s => s.segmentId === segment.segmentId);
 
@@ -132,15 +147,36 @@ module.exports = function(server, mongoose, logger) {
         handler: updateVideoSegmentsHandler,
         auth: {
           strategy: authStrategy,
-          scope: ['root', 'readMyConversations', '!-readMyConversations'],
         },
-        description: 'Update the segments of a video.',
+        description: `Update the segments of a video. This endpoint is meant to take as payload 
+        the desired state of a video's segments. It will then perform the CRUD operations required
+        to update the database to match the desired state.`,
         tags: ['api', 'Video', 'Segments'],
         validate: {
           headers: headersValidation,
           payload: {
             videoId: Joi.string().required(),
-            segments: Joi.any().required(),
+            segments: Joi.array()
+              .items(
+                Joi.object({
+                  segmentId: Joi.string().required(),
+                  video: Joi.any().required(),
+                  start: Joi.number().required(),
+                  end: Joi.number().required(),
+                  title: Joi.string().required(),
+                  description: Joi.string().allow(''),
+                  pristine: Joi.boolean().required(),
+                  tags: Joi.array().items(
+                    Joi.object({
+                      rank: Joi.number(),
+                      tag: Joi.object({
+                        name: Joi.string(),
+                      }),
+                    })
+                  ),
+                })
+              )
+              .required(),
           },
         },
         plugins: {
