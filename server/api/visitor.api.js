@@ -26,12 +26,16 @@ module.exports = function(server, mongoose, logger) {
           'http://api.ipstack.com/*?access_key=' + Config.get('/ipstackAccessKey') + '&format=1';
 
         let result = await iplocation(server.methods.getIP(request), [host]);
-        Log.debug('IP RESULT:', result);
-        const agent = useragent.parse(request.headers['user-agent']);
 
-        const visitor = Object.assign(result, { browser: agent.family });
+        if (result && !result.error) {
+          const agent = useragent.parse(request.headers['user-agent']);
 
-        return RestHapi.create(Visitor, visitor, Log);
+          const visitor = Object.assign(result, { browser: agent.family });
+
+          return RestHapi.create(Visitor, visitor, Log);
+        } else {
+          return null;
+        }
       } catch (err) {
         errorHelper.handleError(err, Log);
       }
