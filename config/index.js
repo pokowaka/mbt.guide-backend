@@ -163,6 +163,11 @@ const config = {
     production: process.env.CLIENT_URI,
     $default: process.env.CLIENT_URI,
   },
+  mongoSSL: {
+    $filter: 'env',
+    production: process.env.MONGO_SSL === "true",
+    $default: process.env.MONGO_SSL === "true",
+  },
   // If true, the 'demoAuth' policy is used to restrict certain actions.
   enableDemoAuth: {
     $filter: 'env',
@@ -178,7 +183,7 @@ const config = {
         $filter: 'env',
         production: process.env.MONGODB_URI,
         $default: process.env.MONGODB_URI,
-      },
+      }
     },
     cors: {
       additionalHeaders: ['X-Access-Token', 'X-Refresh-Token'],
@@ -272,7 +277,7 @@ const config = {
     },
     logRoutes: {
       $filter: 'env',
-      production: false,
+      production: true,
       $default: true,
     },
     logScopes: {
