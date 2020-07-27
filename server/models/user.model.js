@@ -227,9 +227,9 @@ module.exports = function(mongoose) {
           throw Boom.unauthorized('Invalid idToken');
         }
 
-        console.log('PAYLOAD:', payload);
-        console.log('FIRE USER:', firebaseUser);
-        console.log('FIRE:', firebaseUser.firebase);
+        // console.log('PAYLOAD:', payload);
+        // console.log('FIRE USER:', firebaseUser);
+        // console.log('FIRE:', firebaseUser.firebase);
 
         const self = this;
         let user;
