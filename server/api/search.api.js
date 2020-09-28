@@ -27,7 +27,9 @@ module.exports = function (server, mongoose, logger) {
         var endpoint = new AWS.Endpoint(domain);
         var aws_request = new AWS.HttpRequest(endpoint, region);
 
+        // TODO: Add pagination options
         const body = {
+          size: 50,
           query: {
             multi_match: {
               query: request.query.term,
@@ -78,9 +80,6 @@ module.exports = function (server, mongoose, logger) {
             }
           );
         });
-
-        Log.error('SEARCH RESPONSE1:', response);
-        Log.error('SEARCH RESPONSE2:', JSON.stringify(response));
 
         const segmentIds = response.body.hits.hits.map((hit) => hit._id);
 
