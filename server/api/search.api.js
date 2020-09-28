@@ -6,6 +6,9 @@ const Boom = require('@hapi/boom');
 const RestHapi = require('rest-hapi');
 const fetch = require('node-fetch');
 const errorHelper = require('../utilities/error-helper');
+const path = require('path');
+
+const AWS = require('aws-sdk');
 
 module.exports = function (server, mongoose, logger) {
   // Search Segments Endpoint
@@ -17,7 +20,12 @@ module.exports = function (server, mongoose, logger) {
 
     const searchSegmentsHandler = async function (request, h) {
       try {
-        let url = `https://search-mbt-dev-f4f7vbrpf7v77zoekzjl53veou.us-east-2.es.amazonaws.com/segment/_search`;
+        let domain = `search-mbt-dev-f4f7vbrpf7v77zoekzjl53veou.us-east-2.es.amazonaws.com`;
+
+        // TODO: Grab region from env-vars
+        const region = 'us-east-2';
+        var endpoint = new AWS.Endpoint(domain);
+        var aws_request = new AWS.HttpRequest(endpoint, region);
 
         const body = {
           query: {
@@ -29,21 +37,52 @@ module.exports = function (server, mongoose, logger) {
           },
         };
 
-        const response = await (
-          await fetch(url, {
-            method: 'post',
-            body: JSON.stringify(body),
-            headers: { 'Content-Type': 'application/json' },
-          })
-        ).json();
-        if (response.error) {
-          throw Boom.badRequest(response.error.message);
-        }
+        aws_request.method = 'POST';
+        aws_request.path = path.join(aws_request.path, 'segment', '_search');
+        aws_request.body = JSON.stringify(body);
+        aws_request.headers['host'] = domain;
+        aws_request.headers['Content-Type'] = 'application/json';
+        // Content-Length is only needed for DELETE requests that include a request
+        // body, but including it for all requests doesn't seem to hurt anything.
+        aws_request.headers['Content-Length'] = Buffer.byteLength(aws_request.body);
 
-        Log.error("SEARCH RESPONSE1:", response)
-        Log.error("SEARCH RESPONSE2:", JSON.stringify(response))
+        const credentials = new AWS.EnvironmentCredentials('AWS');
+        const signer = new AWS.Signers.V4(aws_request, 'es');
+        signer.addAuthorization(credentials, new Date());
 
-        const segmentIds = response.hits.hits.map((hit) => hit._id);
+        const client = new AWS.HttpClient();
+        const response = await new Promise((resolve, reject) => {
+          client.handleRequest(
+            aws_request,
+            null,
+            (response) => {
+              const { statusCode, statusMessage, headers } = response;
+              let body = '';
+              response.on('data', (chunk) => {
+                body += chunk;
+              });
+              response.on('end', () => {
+                const data = {
+                  statusCode,
+                  statusMessage,
+                  headers,
+                };
+                if (body) {
+                  data.body = JSON.parse(body);
+                }
+                resolve(data);
+              });
+            },
+            (err) => {
+              reject(err);
+            }
+          );
+        });
+
+        Log.error('SEARCH RESPONSE1:', response);
+        Log.error('SEARCH RESPONSE2:', JSON.stringify(response));
+
+        const segmentIds = response.body.hits.hits.map((hit) => hit._id);
 
         const matchingSegments = await RestHapi.list(
           Segment,
