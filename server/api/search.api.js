@@ -40,6 +40,9 @@ module.exports = function (server, mongoose, logger) {
           throw Boom.badRequest(response.error.message);
         }
 
+        Log.error("SEARCH RESPONSE1:", response)
+        Log.error("SEARCH RESPONSE2:", JSON.stringify(response))
+
         const segmentIds = response.hits.hits.map((hit) => hit._id);
 
         const matchingSegments = await RestHapi.list(
