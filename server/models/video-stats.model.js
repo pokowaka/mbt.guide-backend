@@ -29,6 +29,10 @@ module.exports = function (mongoose) {
         type: [Types.Object],
         required: true,
       },
+      topContributers: {
+        type: [Types.Object],
+        required: true,
+      },
     },
     { collection: modelName }
   );
