@@ -10,20 +10,24 @@ module.exports = function (server, mongoose, logger) {
     const Video = mongoose.model('video');
     const Segment = mongoose.model('segment');
     const Tag = mongoose.model('tag');
+    const User = mongoose.model('user');
 
     let stats = {};
     let promises = [];
     promises.push(RestHapi.list(Video, { isDeleted: false, $embed: ['segments'] }, Log));
     promises.push(RestHapi.list(Segment, { isDeleted: false }, Log));
     promises.push(RestHapi.list(Tag, { isDeleted: false, $embed: ['segments'] }, Log));
+    promises.push(RestHapi.list(User, { isDeleted: false, $embed: ['segments'] }, Log));
 
     let result = await Promise.all(promises);
 
     const videos = result[0].docs;
     const segments = result[1].docs;
     const tags = result[2].docs;
+    const users = result[3].docs;
 
     tags.sort((a, b) => b.segments.length - a.segments.length);
+    users.sort((a, b) => b.segments.length - a.segments.length);
 
     const tagsCreated = tags.length;
     const videosStarted = videos.filter((v) => v.segments.length >= 1).length;
@@ -37,6 +41,19 @@ module.exports = function (server, mongoose, logger) {
       mostUsedTags.push({ tag: tags[i].name, segmentCount: tags[i].segments.length });
     }
 
+    const topContributers = [];
+    for (let i = 0; i < 10; i++) {
+      const hoursProcessed =
+        users[i].segments.reduce((total, seg, index) => total + seg.end - seg.start, 0) / 60 / 60;
+      topContributers.push({
+        firstName: users[i].firstName,
+        lastName: users[i].lastName,
+        email: users[i].email,
+        segmentCount: users[i].segments.length,
+        hoursProcessed,
+      });
+    }
+
     stats = {
       tagsCreated,
       videosStarted,
@@ -44,6 +61,7 @@ module.exports = function (server, mongoose, logger) {
       segmentsCreated,
       hoursProcessed,
       mostUsedTags,
+      topContributers,
     };
 
     return stats;
@@ -341,8 +359,6 @@ module.exports = function (server, mongoose, logger) {
 
           // We only save stats that are unique to an hour
           if (lastDateHour.getTime() !== todayHour.getTime()) {
-            Log.debug('NEW STAT!');
-
             stats = await getCurrentStats();
             await RestHapi.create(VideoStats, stats, Log);
           }
