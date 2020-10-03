@@ -3,6 +3,9 @@
 const Chalk = require('chalk');
 const RestHapi = require('rest-hapi');
 const errorHelper = require('../utilities/error-helper');
+const fetch = require('node-fetch');
+
+const Config = require('../../config');
 
 module.exports = function (server, mongoose, logger) {
   async function getCurrentStats() {
@@ -12,12 +15,19 @@ module.exports = function (server, mongoose, logger) {
     const Tag = mongoose.model('tag');
     const User = mongoose.model('user');
 
+    const key = Config.get('/youtubeApiKey');
+
+    const channelId = 'UCYwlraEwuFB4ZqASowjoM0g';
+
+    const ytStatsQuery = `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelId}&key=${key}`;
+
     let stats = {};
     let promises = [];
     promises.push(RestHapi.list(Video, { isDeleted: false, $embed: ['segments'] }, Log));
     promises.push(RestHapi.list(Segment, { isDeleted: false }, Log));
     promises.push(RestHapi.list(Tag, { isDeleted: false, $embed: ['segments'] }, Log));
     promises.push(RestHapi.list(User, { isDeleted: false, $embed: ['segments'] }, Log));
+    promises.push((await fetch(ytStatsQuery)).json());
 
     let result = await Promise.all(promises);
 
@@ -25,6 +35,7 @@ module.exports = function (server, mongoose, logger) {
     const segments = result[1].docs;
     const tags = result[2].docs;
     const users = result[3].docs;
+    const ytStats = result[4];
 
     tags.sort((a, b) => b.segments.length - a.segments.length);
     users.sort((a, b) => b.segments.length - a.segments.length);
@@ -54,6 +65,8 @@ module.exports = function (server, mongoose, logger) {
       });
     }
 
+    const totalVideos = ytStats.items[0].statistics.videoCount;
+
     stats = {
       tagsCreated,
       videosStarted,
@@ -62,6 +75,7 @@ module.exports = function (server, mongoose, logger) {
       hoursProcessed,
       mostUsedTags,
       topContributers,
+      totalVideos,
     };
 
     return stats;

@@ -33,6 +33,10 @@ module.exports = function (mongoose) {
         type: [Types.Object],
         required: true,
       },
+      totalVideos: {
+        type: Types.Number,
+        required: true,
+      },
     },
     { collection: modelName }
   );
