@@ -1,0 +1,21 @@
+version: "3.4"
+
+networks:
+  backend:
+
+volumes:
+  mongo_data:
+    name: mbt_mongo_data_utils
+
+services:
+  mongo:
+    image: mongo:3.6.4
+    ports:
+      - 27017:27017
+    volumes:
+      - "mongo_data:/data/db"
+      - "./:/usr/src"
+    networks:
+      - backend
+    env_file:
+      - ./.env-util
