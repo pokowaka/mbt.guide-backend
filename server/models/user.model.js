@@ -23,21 +23,21 @@ require('firebase/firestore');
 const admin = require('firebase-admin');
 const AWS = require('aws-sdk');
 
-const s3 = new AWS.S3();
-s3.getObject({ Bucket: 'mbt-guide-private-keys', Key: 'mbt-guide-b41e8f3aa8b4.json' }, function(
-  error,
-  data
-) {
-  if (error != null) {
-    console.error('Error loading firebase admin cert:', error);
-  } else {
-    const serviceAccount = JSON.parse(data.Body.toString());
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      databaseURL: 'https://mbt-guide-d9b1b.firebaseio.com',
-    });
-  }
-});
+// const s3 = new AWS.S3();
+// s3.getObject({ Bucket: 'mbt-guide-private-keys', Key: 'mbt-guide-b41e8f3aa8b4.json' }, function(
+//   error,
+//   data
+// ) {
+//   if (error != null) {
+//     console.error('Error loading firebase admin cert:', error);
+//   } else {
+//     const serviceAccount = JSON.parse(data.Body.toString());
+//     admin.initializeApp({
+//       credential: admin.credential.cert(serviceAccount),
+//       databaseURL: 'https://mbt-guide-d9b1b.firebaseio.com',
+//     });
+//   }
+// });
 
 const firebaseConfig = require('../../config/firebaseConfig');
 const firebaseApp = firebase.initializeApp(firebaseConfig);
@@ -45,7 +45,7 @@ const firebaseApp = firebase.initializeApp(firebaseConfig);
 //TODO: Import test users
 const testUsers = ['test@superadmin.com', 'test@admin.com'];
 
-module.exports = function(mongoose) {
+module.exports = function (mongoose) {
   const modelName = 'user';
   const Types = mongoose.Schema.Types;
   const Schema = new mongoose.Schema(
@@ -180,7 +180,7 @@ module.exports = function(mongoose) {
         },
       },
       create: {
-        post: async function(document, request, result, logger) {
+        post: async function (document, request, result, logger) {
           const Log = logger.bind();
           try {
             const User = mongoose.model('user');
@@ -198,7 +198,7 @@ module.exports = function(mongoose) {
       },
     },
 
-    generateHash: async function(key, logger) {
+    generateHash: async function (key, logger) {
       const Log = logger.bind();
       try {
         let salt = await Bcrypt.genSalt(10);
@@ -208,7 +208,7 @@ module.exports = function(mongoose) {
         errorHelper.handleError(err, Log);
       }
     },
-    findByToken: async function(payload, server, logger) {
+    findByToken: async function (payload, server, logger) {
       const Log = logger.bind();
 
       const Role = mongoose.model('role');
@@ -275,7 +275,7 @@ module.exports = function(mongoose) {
         errorHelper.handleError(err, Log);
       }
     },
-    findByCredentials: async function(payload, server, logger) {
+    findByCredentials: async function (payload, server, logger) {
       const Log = logger.bind();
       try {
         const self = this;
@@ -287,16 +287,16 @@ module.exports = function(mongoose) {
 
         let result;
 
-        try {
-          result = await firebaseApp.auth().signInWithEmailAndPassword(email, password);
-        } catch (err) {
-          //TODO: If test user, check if error is because user doesn't exist and if so, create the user (in firebase)
-          Log.error(err);
-          return false;
-        }
+        // try {
+        //   result = await firebaseApp.auth().signInWithEmailAndPassword(email, password);
+        // } catch (err) {
+        //   //TODO: If test user, check if error is because user doesn't exist and if so, create the user (in firebase)
+        //   Log.error(err);
+        //   return false;
+        // }
 
         const query = {
-          email: result.user.email.toLowerCase(),
+          email: email.toLowerCase(),
           isDeleted: false,
         };
 
@@ -304,14 +304,14 @@ module.exports = function(mongoose) {
 
         let user = await mongooseQuery.lean();
 
-        user = await this.updateActive({ firebaseUser: result.user, user });
+        //user = await this.updateActive({ firebaseUser: result.user, user });
 
         return user ? user : false;
       } catch (err) {
         errorHelper.handleError(err, Log);
       }
     },
-    updateActive: async function({ firebaseUser, user }) {
+    updateActive: async function ({ firebaseUser, user }) {
       if (
         user &&
         user.isActive !== firebaseUser.email_verified &&

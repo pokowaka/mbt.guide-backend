@@ -9,7 +9,7 @@ const Manifest = require('../config/manifest.conf');
 const Config = require('../config');
 const restHapiConfig = Config.get('/restHapiConfig');
 
-require('dotenv').config();
+//require('dotenv').config();
 
 (async function processTags() {
   RestHapi.config.loglevel = 'DEBUG';
