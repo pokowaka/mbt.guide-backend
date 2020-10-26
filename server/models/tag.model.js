@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = function(mongoose) {
+module.exports = function (mongoose) {
   var modelName = 'tag';
   var Types = mongoose.Schema.Types;
   var Schema = new mongoose.Schema(
@@ -9,6 +9,10 @@ module.exports = function(mongoose) {
         type: Types.String,
         required: true,
         unique: true,
+      },
+      segmentCount: {
+        type: Types.Number,
+        unique: false,
       },
     },
     { collection: modelName }
