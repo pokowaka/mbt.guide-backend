@@ -17,22 +17,35 @@ const headersValidation = Joi.object({
   authorization: Joi.string().required(),
 }).options({ allowUnknown: true });
 
-module.exports = function(server, mongoose, logger) {
+module.exports = function (server, mongoose, logger) {
   // Update Video Segments Endpoint
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Update Video Segments'));
 
     Log.note('Generating Update Video Segments Endpoint');
 
-    const updateVideoSegmentsHandler = async function(request, h) {
+    const updateVideoSegmentsHandler = async function (request, h) {
       try {
         const Segment = mongoose.model('segment');
 
         const { videoId, segments } = request.payload;
-        const video = (await RestHapi.list({
-          model: 'video',
-          query: { ytId: videoId, $embed: ['segments.tags'] },
-        })).docs[0];
+
+        //Log.debug("Segments length:", segments.length);
+        //Log.debug("Segments before:", segments, segments[0].tags);
+        for (let i = 0; i < segments.length; i++) {
+          for (let j = 0; j < segments[i].tags.length; j++) {
+            //Log.debug("i=",i, "j=", j)
+            segments[i].tags[j].tag.name = standardizeTag(segments[i].tags[j].tag.name);
+          }
+        }
+        //Log.debug("Segments after:", segments, segments[0].tags);
+
+        const video = (
+          await RestHapi.list({
+            model: 'video',
+            query: { ytId: videoId, $embed: ['segments.tags'] },
+          })
+        ).docs[0];
 
         if (!video) {
           throw Boom.badRequest('Video not found.');
@@ -41,8 +54,8 @@ module.exports = function(server, mongoose, logger) {
         const deletedSegments = _.differenceBy(video.segments, segments, 'segmentId');
 
         const newSegments = _.differenceBy(segments, video.segments, 'segmentId')
-          .filter(s => s.pristine === false)
-          .map(s => ({
+          .filter((s) => s.pristine === false)
+          .map((s) => ({
             segmentId: s.segmentId,
             video: s.video,
             start: s.start,
@@ -54,11 +67,11 @@ module.exports = function(server, mongoose, logger) {
         const oldSegments = _.differenceBy(segments, newSegments, 'segmentId');
 
         const updatedSegments = oldSegments
-          .filter(s => s.pristine === false)
-          .map(s => ({
+          .filter((s) => s.pristine === false)
+          .map((s) => ({
             // We have to grab the _id from the existing segment since the payload segment
             // might not have one
-            _id: video.segments.filter(vs => vs.segmentId === s.segmentId)[0]._id,
+            _id: video.segments.filter((vs) => vs.segmentId === s.segmentId)[0]._id,
             start: s.start,
             end: s.end,
             title: s.title,
@@ -72,7 +85,7 @@ module.exports = function(server, mongoose, logger) {
           promises.push(
             RestHapi.deleteMany({
               model: 'segment',
-              payload: deletedSegments.map(s => s._id.toString()),
+              payload: deletedSegments.map((s) => s._id.toString()),
               restCall: true,
               credentials: request.auth.credentials,
             })
@@ -112,14 +125,16 @@ module.exports = function(server, mongoose, logger) {
           }
         }
 
-        const savedSegments = (await RestHapi.list({
-          model: 'video',
-          query: { ytId: videoId, $embed: ['segments.tags'] },
-        })).docs[0].segments;
+        const savedSegments = (
+          await RestHapi.list({
+            model: 'video',
+            query: { ytId: videoId, $embed: ['segments.tags'] },
+          })
+        ).docs[0].segments;
 
         // Update tags for each segment
         for (const segment of savedSegments) {
-          const { tags } = segments.find(s => s.segmentId === segment.segmentId);
+          const { tags } = segments.find((s) => s.segmentId === segment.segmentId);
 
           await Segment.updateTags({
             _id: segment._id,
@@ -131,10 +146,12 @@ module.exports = function(server, mongoose, logger) {
 
         await Promise.all(promises);
 
-        return (await RestHapi.list({
-          model: 'video',
-          query: { ytId: videoId, $embed: ['segments.tags'] },
-        })).docs[0].segments;
+        return (
+          await RestHapi.list({
+            model: 'video',
+            query: { ytId: videoId, $embed: ['segments.tags'] },
+          })
+        ).docs[0].segments;
       } catch (err) {
         errorHelper.handleError(err, Log);
       }
@@ -194,3 +211,20 @@ module.exports = function(server, mongoose, logger) {
     });
   })();
 };
+
+function standardizeTag(name) {
+  //console.log("Before:",name);
+
+  //Eliminate leading and trailing spaces
+  name = name.trim();
+
+  //Eliminate junk characters at beginning
+  if (name.startsWith('#') || name.startsWith('$') || name.startsWith('.')) name = name.substr(1);
+
+  //Convert everything to lower case
+  name = name.toLowerCase();
+
+  //console.log("After:", name);
+
+  return name;
+}
