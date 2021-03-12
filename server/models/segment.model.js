@@ -4,7 +4,7 @@ const RestHapi = require('../../node_modules/rest-hapi');
 const _ = require('lodash');
 const errorHelper = require('../utilities/error-helper');
 
-module.exports = function(mongoose) {
+module.exports = function (mongoose) {
   var modelName = 'segment';
   var Types = mongoose.Schema.Types;
   var Schema = new mongoose.Schema(
@@ -71,7 +71,7 @@ module.exports = function(mongoose) {
         },
       },
       create: {
-        pre: async function(payload, request, logger) {
+        pre: async function (payload, request, logger) {
           const Log = logger.bind();
           try {
             payload.owner = request.auth.credentials.user._id;
@@ -84,7 +84,7 @@ module.exports = function(mongoose) {
       },
     },
 
-    updateTags: async function({ _id, oldTags, currentTags, logger }) {
+    updateTags: async function ({ _id, oldTags, currentTags, logger }) {
       const nameAndRank = (a, b) => {
         return a.tag.name === b.tag.name && a.rank === b.rank;
       };
@@ -92,15 +92,17 @@ module.exports = function(mongoose) {
       const deletedTags = _.differenceBy(oldTags, currentTags, 'tag.name');
       const newTags = _.differenceWith(currentTags, oldTags, nameAndRank);
 
-      const existingTagsToAdd = (await RestHapi.list({
-        model: 'tag',
-        query: {
-          name: newTags.map(t => t.tag.name),
-        },
-      })).docs;
+      const existingTagsToAdd = (
+        await RestHapi.list({
+          model: 'tag',
+          query: {
+            name: newTags.map((t) => t.tag.name),
+          },
+        })
+      ).docs;
 
       const tagsToCreateAndAdd = _.differenceBy(
-        newTags.map(t => ({ name: t.tag.name })),
+        newTags.map((t) => ({ name: t.tag.name })),
         existingTagsToAdd,
         'name'
       );
@@ -112,11 +114,11 @@ module.exports = function(mongoose) {
             payload: tagsToCreateAndAdd,
           });
 
-      const tagsToAdd = [...newTagsToAdd, ...existingTagsToAdd].map(t => ({
+      const tagsToAdd = [...newTagsToAdd, ...existingTagsToAdd].map((t) => ({
         childId: t._id,
-        rank: currentTags.find(tt => tt.tag.name === t.name).rank,
+        rank: currentTags.find((tt) => tt.tag.name === t.name).rank,
       }));
-      const tagsToRemove = deletedTags.map(t => t.tag._id);
+      const tagsToRemove = deletedTags.map((t) => t.tag._id);
 
       // Add tags
       !_.isEmpty(tagsToAdd) &&
@@ -136,6 +138,38 @@ module.exports = function(mongoose) {
           associationName: 'tags',
           payload: tagsToRemove,
         }));
+
+      //Update segmentCount for current and old tags.
+      const oldTagsToCountSegmentsFor = (
+        await RestHapi.list({
+          model: 'tag',
+          query: {
+            name: oldTags.map((t) => t.tag.name),
+            isDeleted: false,
+            $embed: ['segments'],
+          },
+        })
+      ).docs;
+      const currentTagsToCountSegmentsFor = (
+        await RestHapi.list({
+          model: 'tag',
+          query: {
+            name: currentTags.map((t) => t.tag.name),
+            isDeleted: false,
+            $embed: ['segments'],
+          },
+        })
+      ).docs;
+      const allTagsToCountSegmentsFor = oldTagsToCountSegmentsFor.concat(
+        currentTagsToCountSegmentsFor
+      );
+      for (let i = 0; i < allTagsToCountSegmentsFor.length; i++) {
+        let tag = await RestHapi.update({
+          model: 'tag',
+          _id: allTagsToCountSegmentsFor[i]._id.toString(),
+          payload: { segmentCount: allTagsToCountSegmentsFor[i].segments.length },
+        });
+      }
     },
   };
 
