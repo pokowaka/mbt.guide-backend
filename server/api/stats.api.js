@@ -54,8 +54,8 @@ module.exports = function (server, mongoose, logger) {
     users.sort((a, b) => b.segments.length - a.segments.length);
 
     const tagsCreated = tags.length;
-    const videosStarted = videos.filter((v) => v.segments.length >= 1).length;
-    const videosCompleted = videos.filter((v) => v.segments.length >= 3).length;
+    const videosStarted = videos.filter((v) => v.segments.length >= 0).length;
+    const videosCompleted = videos.filter((v) => v.segments.length >= 1).length;
     const segmentsCreated = segments.length;
     const hoursProcessed =
       segments.reduce((total, seg, index) => total + seg.end - seg.start, 0) / 60 / 60;
