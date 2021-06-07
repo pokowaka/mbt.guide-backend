@@ -94,6 +94,10 @@ module.exports = function (mongoose) {
         return a.tag.name === b.tag.name && a.rank === b.rank;
       };
 
+      // Filter out "ghost" tags (not sure how this occurs)
+      oldTags = oldTags.filter((t) => t.tag !== null);
+      currentTags = currentTags.filter((t) => t.tag !== null);
+
       const deletedTags = _.differenceBy(oldTags, currentTags, 'tag.name');
       const newTags = _.differenceWith(currentTags, oldTags, nameAndRank);
 
@@ -174,6 +178,27 @@ module.exports = function (mongoose) {
           _id: allTagsToCountSegmentsFor[i]._id.toString(),
           payload: { segmentCount: allTagsToCountSegmentsFor[i].segments.length },
         });
+      }
+
+      //Delete orphan tags
+      const possibleOrphanTags = (
+        await RestHapi.list({
+          model: 'tag',
+          query: {
+            _id: tagsToRemove.map((t) => t.toString()),
+            isDeleted: false,
+            $embed: ['segments'],
+          },
+        })
+      ).docs;
+      for (let i = 0; i < possibleOrphanTags.length; i++) {
+        if (possibleOrphanTags[i].segments.length < 1) {
+          await RestHapi.deleteOne({
+            model: 'tag',
+            _id: possibleOrphanTags[i]._id.toString(),
+            hardDelete: true,
+          });
+        }
       }
     },
   };
