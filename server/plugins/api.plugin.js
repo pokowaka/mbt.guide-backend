@@ -55,7 +55,7 @@ async function getMongoCA() {
     console.log("FILE FOUND")
     return Promise.resolve(certFileBuf);
   } catch {
-    console.log("FILE NOT FOUND")
+    console.log("FILE NOT FOUND, USING S3")
     return new Promise((res, rej) => {
       const s3 = new AWS.S3();
       s3.getObject({ Bucket: 'mbt-guide-private-keys', Key: mongoCertFile }, function(
