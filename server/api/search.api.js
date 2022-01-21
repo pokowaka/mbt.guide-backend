@@ -21,7 +21,7 @@ module.exports = function (server, mongoose, logger) {
 
     const searchSegmentsHandler = async function (request, h) {
       try {
-        let domain = `search-mbt-dev-f4f7vbrpf7v77zoekzjl53veou.us-east-2.es.amazonaws.com`;
+        let domain = `search-mbt-dev2-reini6slnwjr3rqvykrqcz4h6q.us-east-2.es.amazonaws.com`;
 
         // TODO: Grab region from env-vars
         const region = 'us-east-2';
