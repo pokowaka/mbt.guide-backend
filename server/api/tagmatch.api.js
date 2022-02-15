@@ -37,6 +37,9 @@ module.exports = function (server, mongoose, logger) {
         //Take only as many matches as requested
         let matches = sortedTagRatings.slice(0, maxMatches);
 
+        //ToDo: Get a count of how many times each tag is used so can return that too
+        //Can we get this from our original allTags list so don't have to query database again?
+
         return matches;
       } catch (err) {
         errorHelper.handleError(err, Log);
