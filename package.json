@@ -57,6 +57,7 @@
     "request-promise": "^4.2.2",
     "require-dir": "^0.3.2",
     "rest-hapi": "^2.3.0",
+    "string-similarity": "^4.0.4",
     "useragent": "^2.3.0",
     "zxcvbn": "^4.4.2"
   },
