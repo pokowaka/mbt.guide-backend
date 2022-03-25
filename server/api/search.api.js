@@ -34,14 +34,14 @@ module.exports = function (server, mongoose, logger) {
           query: {
             multi_match: {
               query: request.query.term,
-              type: 'most_fields',
+              type: 'cross_fields',
               fields: [
-                'title^6',
-                'high_tags^5',
-                'description^4',
-                'mid_tags^3',
-                'low_tags^2',
-                'captions',
+                'title^5',
+                'captions^6',
+                'high_tags^4',
+                'description^3',
+                'mid_tags^2',
+                'low_tags',
               ],
             },
           },
