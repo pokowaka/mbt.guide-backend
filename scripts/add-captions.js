@@ -32,44 +32,57 @@ require('dotenv').config();
     //DO WORK
     const Video = Mongoose.model('video');
     const Segment = Mongoose.model('segment');
-    let videos = await RestHapi.list(Video, { isDeleted: false, $embed: ['segments'] }, Log);
+    const $limit = 20;
+    let $page = 1;
+    let hasNext = true;
 
-    for (const video of videos.docs) {
-      Log.log('Processing video: ', video.title);
-      let captions = [];
-      try {
-        const captions = await getSubtitles({
-          videoID: video.ytId, // youtube video id
-          lang: 'en', // default: `en`
-        });
-      } catch (err) {
-        Log.debug(err);
-        continue;
-      }
+    while (hasNext) {
+      let videos = await RestHapi.list(
+        Video,
+        { isDeleted: false, $embed: ['segments'], $limit, $page },
+        Log
+      );
+      $page = videos.pages.next;
+      hasNext = videos.pages.hasNext;
 
-      for (const seg of video.segments) {
-        if (seg.captions) {
+      for (const video of videos.docs) {
+        Log.log('Processing video: ', video.title);
+        let captions = [];
+        try {
+          captions = await getSubtitles({
+            videoID: video.ytId, // youtube video id
+            lang: 'en', // default: `en`
+          });
+        } catch (err) {
+          Log.debug(err);
           continue;
         }
-        let segCaptions = '';
-        let foundSegment = false;
 
-        for (const cap of captions) {
-          if (cap.start > seg.start && cap.start < seg.end) {
-            if (!foundSegment) {
-              foundSegment = true;
-              if (captions.indexOf(cap) !== 0) {
-                segCaptions = captions[captions.indexOf(cap) - 1].text;
+        for (const seg of video.segments) {
+          if (seg.captions) {
+            continue;
+          }
+          let segCaptions = '';
+          let foundSegment = false;
+
+          for (const cap of captions) {
+            if (cap.start > seg.start && cap.start < seg.end) {
+              if (!foundSegment) {
+                foundSegment = true;
+                if (captions.indexOf(cap) !== 0) {
+                  segCaptions = captions[captions.indexOf(cap) - 1].text;
+                }
               }
+              segCaptions = `${segCaptions} ${cap.text}`;
             }
-            segCaptions = `${segCaptions} ${cap.text}`;
+            if (cap.start > seg.end) {
+              break;
+            }
           }
-          if (cap.start > seg.end) {
-            break;
-          }
-        }
 
-        await RestHapi.update(Segment, seg._id, { captions: segCaptions }, Log);
+          Log.log('Updating segment:', seg.title);
+          await RestHapi.update(Segment, seg._id, { captions: segCaptions }, Log);
+        }
       }
     }
 
