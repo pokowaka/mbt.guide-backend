@@ -40,7 +40,9 @@ module.exports = function (server, mongoose, logger) {
     promises.push(RestHapi.list(Tag, { isDeleted: false }, Log));
     promises.push(RestHapi.list(User, { isDeleted: false, $embed: ['segments'] }, Log));
     promises.push((await fetch(ytStatsQuery)).json());
-    promises.push(RestHapi.list(SearchQuery, { isDeleted: false, $sort: ['-queryCount'] }, Log));
+    promises.push(
+      RestHapi.list(SearchQuery, { isDeleted: false, $sort: ['-queryCount'], $limit: 15 }, Log)
+    );
 
     let result = await Promise.all(promises);
 
@@ -64,10 +66,12 @@ module.exports = function (server, mongoose, logger) {
     const hoursProcessed =
       segments.reduce((total, seg, index) => total + seg.end - seg.start, 0) / 60 / 60;
     const totalSegmentViews = segments.reduce((total, seg, index) => total + (seg.views || 0), 0);
-    const totalSearches = searchQueries.reduce(
-      (total, query, index) => total + (query.queryCount || 0),
-      0
-    );
+    // const totalSearches = searchQueries.reduce(
+    //   (total, query, index) => total + (query.queryCount || 0),
+    //   0
+    // );
+
+    const totalSearches = 0; // TODO: count in a more efficient way
 
     const mostUsedTags = [];
     for (let i = 0; i < 10 && i < tags.length; i++) {
