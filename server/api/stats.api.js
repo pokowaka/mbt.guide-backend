@@ -36,7 +36,7 @@ module.exports = function (server, mongoose, logger) {
         Log
       )
     );
-    promises.push(RestHapi.list(Tag, { isDeleted: false, $embed: ['segments'] }, Log));
+    promises.push(RestHapi.list(Tag, { isDeleted: false }, Log));
     promises.push(RestHapi.list(User, { isDeleted: false, $embed: ['segments'] }, Log));
     promises.push((await fetch(ytStatsQuery)).json());
     promises.push(RestHapi.list(SearchQuery, { isDeleted: false, $sort: ['-queryCount'] }, Log));
@@ -50,7 +50,7 @@ module.exports = function (server, mongoose, logger) {
     const ytStats = result[4];
     const searchQueries = result[5].docs;
 
-    tags.sort((a, b) => b.segments.length - a.segments.length);
+    tags.sort((a, b) => b.segmentCount - a.segmentCount);
     users.sort((a, b) => b.segments.length - a.segments.length);
 
     const tagsCreated = tags.length;
@@ -67,7 +67,7 @@ module.exports = function (server, mongoose, logger) {
 
     const mostUsedTags = [];
     for (let i = 0; i < 10 && i < tags.length; i++) {
-      mostUsedTags.push({ tag: tags[i].name, segmentCount: tags[i].segments.length });
+      mostUsedTags.push({ tag: tags[i].name, segmentCount: tags[i].segmentCount });
     }
 
     const topContributers = [];
