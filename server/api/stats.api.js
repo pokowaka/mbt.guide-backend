@@ -44,6 +44,27 @@ module.exports = function (server, mongoose, logger) {
       RestHapi.list(SearchQuery, { isDeleted: false, $sort: ['-queryCount'], $limit: 15 }, Log)
     );
 
+    let hasNext = true;
+    let page = 1;
+    let totalSearches = 0;
+
+    while (hasNext) {
+      const searchQueryResult = await RestHapi.list(
+        SearchQuery,
+        { isDeleted: false, $limit: 100, $page: page },
+        Log
+      );
+      const someQueries = searchQueryResult.docs;
+      hasNext = searchQueryResult.pages.hasNext;
+      page++;
+
+      const searchSum = someQueries.reduce(
+        (total, query, index) => total + (query.queryCount || 0),
+        0
+      );
+      totalSearches += searchSum;
+    }
+
     let result = await Promise.all(promises);
 
     // const videos = result[0].docs;
@@ -66,12 +87,6 @@ module.exports = function (server, mongoose, logger) {
     const hoursProcessed =
       segments.reduce((total, seg, index) => total + seg.end - seg.start, 0) / 60 / 60;
     const totalSegmentViews = segments.reduce((total, seg, index) => total + (seg.views || 0), 0);
-    // const totalSearches = searchQueries.reduce(
-    //   (total, query, index) => total + (query.queryCount || 0),
-    //   0
-    // );
-
-    const totalSearches = 0; // TODO: count in a more efficient way
 
     const mostUsedTags = [];
     for (let i = 0; i < 10 && i < tags.length; i++) {
