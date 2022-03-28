@@ -25,6 +25,7 @@ module.exports = function (server, mongoose, logger) {
 
       let stats = {};
       let promises = [];
+      Log.debug("HERE 1")
       // promises.push(RestHapi.list(Video, { isDeleted: false, $embed: ['segments'] }, Log));
       promises.push(RestHapi.list(User, { isDeleted: false, $count: true }, Log)); //dummy query
       promises.push(RestHapi.list(User, { isDeleted: false, $count: true }, Log)); //dummy query
@@ -34,6 +35,8 @@ module.exports = function (server, mongoose, logger) {
       promises.push(
         RestHapi.list(SearchQuery, { isDeleted: false, $sort: ['-queryCount'], $limit: 15 }, Log)
       );
+
+      Log.debug("HERE 2")
 
       let hasNext = true;
       let page = 1;
@@ -58,6 +61,8 @@ module.exports = function (server, mongoose, logger) {
         segments = segments.concat(someSegments);
       }
 
+      Log.debug("HERE 3")
+
       hasNext = true;
       page = 1;
       let totalSearches = 0;
@@ -79,7 +84,11 @@ module.exports = function (server, mongoose, logger) {
         totalSearches += searchSum;
       }
 
+      Log.debug("HERE 4")
+
       let result = await Promise.all(promises);
+
+      Log.debug("HERE 5")
 
       // const videos = result[0].docs;
       // const segments = result[1].docs;
@@ -154,6 +163,8 @@ module.exports = function (server, mongoose, logger) {
         totalSearches,
         topSearchTerms,
       };
+
+      Log.debug("HERE 6")
 
       return stats;
     } catch (err) {
@@ -471,6 +482,45 @@ module.exports = function (server, mongoose, logger) {
         handler: logVideoStatsHandler,
         auth: null,
         description: 'Log stats for the videos and segments.',
+        tags: ['api', 'Stats', 'Video'],
+        validate: {},
+        plugins: {
+          'hapi-swagger': {
+            responseMessages: [
+              { code: 200, message: 'Success' },
+              { code: 400, message: 'Bad Request' },
+              { code: 404, message: 'Not Found' },
+              { code: 500, message: 'Internal Server Error' },
+            ],
+          },
+        },
+      },
+    });
+  })();
+
+
+
+  // Get Video Stats Endpoint TEST
+  (function () {
+    const Log = logger.bind(Chalk.magenta('Video Stats TEST'));
+
+    Log.note('Generating Get Video Stats endpoint TEST');
+
+    const videoStatsHandler = async function (request, h) {
+      try {
+        return getCurrentStats();
+      } catch (err) {
+        errorHelper.handleError(err, Log);
+      }
+    };
+
+    server.route({
+      method: 'GET',
+      path: '/stats/video/test',
+      config: {
+        handler: videoStatsHandler,
+        auth: null,
+        description: 'Get stats for the videos and segments.',
         tags: ['api', 'Stats', 'Video'],
         validate: {},
         plugins: {
