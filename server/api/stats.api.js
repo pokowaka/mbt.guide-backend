@@ -10,138 +10,155 @@ const Config = require('../../config');
 module.exports = function (server, mongoose, logger) {
   async function getCurrentStats() {
     const Log = logger.bind(Chalk.magenta('Video Stats'));
-    const Video = mongoose.model('video');
-    const Segment = mongoose.model('segment');
-    const Tag = mongoose.model('tag');
-    const User = mongoose.model('user');
-    const SearchQuery = mongoose.model('searchQuery');
+    try {
+      const Video = mongoose.model('video');
+      const Segment = mongoose.model('segment');
+      const Tag = mongoose.model('tag');
+      const User = mongoose.model('user');
+      const SearchQuery = mongoose.model('searchQuery');
 
-    const key = Config.get('/youtubeApiKey');
+      const key = Config.get('/youtubeApiKey');
 
-    const channelId = 'UCYwlraEwuFB4ZqASowjoM0g';
+      const channelId = 'UCYwlraEwuFB4ZqASowjoM0g';
 
-    const ytStatsQuery = `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelId}&key=${key}`;
+      const ytStatsQuery = `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelId}&key=${key}`;
 
-    let stats = {};
-    let promises = [];
-    // promises.push(RestHapi.list(Video, { isDeleted: false, $embed: ['segments'] }, Log));
-    promises.push(RestHapi.list(User, { isDeleted: false, $count: true }, Log)); //dummy query
-    promises.push(
-      RestHapi.list(
-        Segment,
-        {
-          isDeleted: false,
-          $select: ['title', 'segmentId', 'views', 'start', 'end'],
-          $sort: ['-views'],
-        },
-        Log
-      )
-    );
-    promises.push(RestHapi.list(Tag, { isDeleted: false }, Log));
-    promises.push(RestHapi.list(User, { isDeleted: false, $embed: ['segments'] }, Log));
-    promises.push((await fetch(ytStatsQuery)).json());
-    promises.push(
-      RestHapi.list(SearchQuery, { isDeleted: false, $sort: ['-queryCount'], $limit: 15 }, Log)
-    );
-
-    let hasNext = true;
-    let page = 1;
-    let totalSearches = 0;
-
-    while (hasNext) {
-      const searchQueryResult = await RestHapi.list(
-        SearchQuery,
-        { isDeleted: false, $limit: 100, $page: page },
-        Log
+      let stats = {};
+      let promises = [];
+      // promises.push(RestHapi.list(Video, { isDeleted: false, $embed: ['segments'] }, Log));
+      promises.push(RestHapi.list(User, { isDeleted: false, $count: true }, Log)); //dummy query
+      promises.push(RestHapi.list(User, { isDeleted: false, $count: true }, Log)); //dummy query
+      promises.push(RestHapi.list(Tag, { isDeleted: false }, Log));
+      promises.push(RestHapi.list(User, { isDeleted: false, $embed: ['segments'] }, Log));
+      promises.push((await fetch(ytStatsQuery)).json());
+      promises.push(
+        RestHapi.list(SearchQuery, { isDeleted: false, $sort: ['-queryCount'], $limit: 15 }, Log)
       );
-      const someQueries = searchQueryResult.docs;
-      hasNext = searchQueryResult.pages.hasNext;
-      page++;
 
-      const searchSum = someQueries.reduce(
-        (total, query, index) => total + (query.queryCount || 0),
-        0
-      );
-      totalSearches += searchSum;
-    }
+      let hasNext = true;
+      let page = 1;
+      let segments = [];
 
-    let result = await Promise.all(promises);
+      while (hasNext) {
+        const segmentsResult = await RestHapi.list(
+          Segment,
+          {
+            isDeleted: false,
+            $select: ['title', 'segmentId', 'views', 'start', 'end'],
+            $sort: ['-views'],
+            $limit: 100,
+            $page: page,
+          },
+          Log
+        );
+        const someSegments = segmentsResult.docs;
+        hasNext = segmentsResult.pages.hasNext;
+        page++;
 
-    // const videos = result[0].docs;
-    const segments = result[1].docs;
-    const tags = result[2].docs;
-    const users = result[3].docs;
-    const ytStats = result[4];
-    const searchQueries = result[5].docs;
+        segments = segments.concat(someSegments);
+      }
 
-    tags.sort((a, b) => b.segmentCount - a.segmentCount);
-    users.sort((a, b) => b.segments.length - a.segments.length);
+      hasNext = true;
+      page = 1;
+      let totalSearches = 0;
 
-    // TODO: Get video segment count
-    const tagsCreated = tags.length;
-    // const videosStarted = videos.filter((v) => v.segments.length >= 0).length;
-    // const videosCompleted = videos.filter((v) => v.segments.length >= 1).length;
-    const videosStarted = 975;
-    const videosCompleted = 975;
-    const segmentsCreated = segments.length;
-    const hoursProcessed =
-      segments.reduce((total, seg, index) => total + seg.end - seg.start, 0) / 60 / 60;
-    const totalSegmentViews = segments.reduce((total, seg, index) => total + (seg.views || 0), 0);
+      while (hasNext) {
+        const searchQueryResult = await RestHapi.list(
+          SearchQuery,
+          { isDeleted: false, $limit: 100, $page: page },
+          Log
+        );
+        const someQueries = searchQueryResult.docs;
+        hasNext = searchQueryResult.pages.hasNext;
+        page++;
 
-    const mostUsedTags = [];
-    for (let i = 0; i < 10 && i < tags.length; i++) {
-      mostUsedTags.push({ tag: tags[i].name, segmentCount: tags[i].segmentCount });
-    }
+        const searchSum = someQueries.reduce(
+          (total, query, index) => total + (query.queryCount || 0),
+          0
+        );
+        totalSearches += searchSum;
+      }
 
-    const topContributers = [];
-    for (let i = 0; i < 10 && i < users.length; i++) {
+      let result = await Promise.all(promises);
+
+      // const videos = result[0].docs;
+      // const segments = result[1].docs;
+      const tags = result[2].docs;
+      const users = result[3].docs;
+      const ytStats = result[4];
+      const searchQueries = result[5].docs;
+
+      tags.sort((a, b) => b.segmentCount - a.segmentCount);
+      users.sort((a, b) => b.segments.length - a.segments.length);
+
+      // TODO: Get video segment count
+      const tagsCreated = tags.length;
+      // const videosStarted = videos.filter((v) => v.segments.length >= 0).length;
+      // const videosCompleted = videos.filter((v) => v.segments.length >= 1).length;
+      const videosStarted = 975;
+      const videosCompleted = 975;
+      const segmentsCreated = segments.length;
       const hoursProcessed =
-        users[i].segments.reduce((total, seg, index) => total + seg.end - seg.start, 0) / 60 / 60;
-      topContributers.push({
-        firstName: users[i].firstName,
-        lastName: users[i].lastName,
-        email: users[i].email,
-        segmentCount: users[i].segments.length,
+        segments.reduce((total, seg, index) => total + seg.end - seg.start, 0) / 60 / 60;
+      const totalSegmentViews = segments.reduce((total, seg, index) => total + (seg.views || 0), 0);
+
+      const mostUsedTags = [];
+      for (let i = 0; i < 10 && i < tags.length; i++) {
+        mostUsedTags.push({ tag: tags[i].name, segmentCount: tags[i].segmentCount });
+      }
+
+      const topContributers = [];
+      for (let i = 0; i < 10 && i < users.length; i++) {
+        const hoursProcessed =
+          users[i].segments.reduce((total, seg, index) => total + seg.end - seg.start, 0) / 60 / 60;
+        topContributers.push({
+          firstName: users[i].firstName,
+          lastName: users[i].lastName,
+          email: users[i].email,
+          segmentCount: users[i].segments.length,
+          hoursProcessed,
+        });
+      }
+
+      const topViewedSegments = [];
+      for (let i = 0; i < 10 && i < segments.length; i++) {
+        topViewedSegments.push({
+          title: segments[i].title,
+          segmentId: segments[i].segmentId,
+          views: segments[i].views,
+        });
+      }
+
+      const topSearchTerms = [];
+      for (let i = 0; i < 10 && i < searchQueries.length; i++) {
+        topSearchTerms.push({
+          term: searchQueries[i].term,
+          queryCount: searchQueries[i].queryCount,
+          isTag: !!searchQueries[i].tag,
+        });
+      }
+
+      const totalVideos = ytStats.items[0].statistics.videoCount;
+
+      stats = {
+        tagsCreated,
+        videosStarted,
+        videosCompleted,
+        segmentsCreated,
         hoursProcessed,
-      });
+        mostUsedTags,
+        topContributers,
+        totalVideos,
+        totalSegmentViews,
+        topViewedSegments,
+        totalSearches,
+        topSearchTerms,
+      };
+
+      return stats;
+    } catch (err) {
+      errorHelper.handleError(err, Log);
     }
-
-    const topViewedSegments = [];
-    for (let i = 0; i < 10 && i < segments.length; i++) {
-      topViewedSegments.push({
-        title: segments[i].title,
-        segmentId: segments[i].segmentId,
-        views: segments[i].views,
-      });
-    }
-
-    const topSearchTerms = [];
-    for (let i = 0; i < 10 && i < searchQueries.length; i++) {
-      topSearchTerms.push({
-        term: searchQueries[i].term,
-        queryCount: searchQueries[i].queryCount,
-        isTag: !!searchQueries[i].tag,
-      });
-    }
-
-    const totalVideos = ytStats.items[0].statistics.videoCount;
-
-    stats = {
-      tagsCreated,
-      videosStarted,
-      videosCompleted,
-      segmentsCreated,
-      hoursProcessed,
-      mostUsedTags,
-      topContributers,
-      totalVideos,
-      totalSegmentViews,
-      topViewedSegments,
-      totalSearches,
-      topSearchTerms,
-    };
-
-    return stats;
   }
   // Dashboard Stats Endpoint
   (function () {
