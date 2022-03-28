@@ -46,7 +46,7 @@ module.exports = function (server, mongoose, logger) {
             isDeleted: false,
             $select: ['title', 'segmentId', 'views', 'start', 'end'],
             $sort: ['-views'],
-            $limit: 100,
+            $limit: 20,
             $page: page,
           },
           Log
@@ -65,7 +65,7 @@ module.exports = function (server, mongoose, logger) {
       while (hasNext) {
         const searchQueryResult = await RestHapi.list(
           SearchQuery,
-          { isDeleted: false, $limit: 100, $page: page },
+          { isDeleted: false, $limit: 20, $page: page },
           Log
         );
         const someQueries = searchQueryResult.docs;
