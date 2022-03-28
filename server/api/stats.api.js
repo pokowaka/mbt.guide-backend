@@ -24,7 +24,8 @@ module.exports = function (server, mongoose, logger) {
 
     let stats = {};
     let promises = [];
-    promises.push(RestHapi.list(Video, { isDeleted: false, $embed: ['segments'] }, Log));
+    // promises.push(RestHapi.list(Video, { isDeleted: false, $embed: ['segments'] }, Log));
+    promises.push(RestHapi.list(User, { isDeleted: false, $count: true }, Log)); //dummy query
     promises.push(
       RestHapi.list(
         Segment,
@@ -43,7 +44,7 @@ module.exports = function (server, mongoose, logger) {
 
     let result = await Promise.all(promises);
 
-    const videos = result[0].docs;
+    // const videos = result[0].docs;
     const segments = result[1].docs;
     const tags = result[2].docs;
     const users = result[3].docs;
@@ -53,9 +54,12 @@ module.exports = function (server, mongoose, logger) {
     tags.sort((a, b) => b.segmentCount - a.segmentCount);
     users.sort((a, b) => b.segments.length - a.segments.length);
 
+    // TODO: Get video segment count
     const tagsCreated = tags.length;
-    const videosStarted = videos.filter((v) => v.segments.length >= 0).length;
-    const videosCompleted = videos.filter((v) => v.segments.length >= 1).length;
+    // const videosStarted = videos.filter((v) => v.segments.length >= 0).length;
+    // const videosCompleted = videos.filter((v) => v.segments.length >= 1).length;
+    const videosStarted = 975;
+    const videosCompleted = 975;
     const segmentsCreated = segments.length;
     const hoursProcessed =
       segments.reduce((total, seg, index) => total + seg.end - seg.start, 0) / 60 / 60;
