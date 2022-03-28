@@ -9,7 +9,7 @@ const Config = require('../../config');
 
 module.exports = function (server, mongoose, logger) {
   async function getCurrentStats() {
-    const Log = logger.bind(Chalk.magenta('Video Stats'));
+    const Log = logger.bind(Chalk.magenta('Video Stats TEST'));
     try {
       const Video = mongoose.model('video');
       const Segment = mongoose.model('segment');
@@ -499,14 +499,13 @@ module.exports = function (server, mongoose, logger) {
   })();
 
 
-
   // Get Video Stats Endpoint TEST
   (function () {
     const Log = logger.bind(Chalk.magenta('Video Stats TEST'));
 
     Log.note('Generating Get Video Stats endpoint TEST');
 
-    const videoStatsHandler = async function (request, h) {
+    const videoStatsHandlerTest = async function (request, h) {
       try {
         return getCurrentStats();
       } catch (err) {
@@ -518,7 +517,7 @@ module.exports = function (server, mongoose, logger) {
       method: 'GET',
       path: '/stats/video/test',
       config: {
-        handler: videoStatsHandler,
+        handler: videoStatsHandlerTest,
         auth: null,
         description: 'Get stats for the videos and segments.',
         tags: ['api', 'Stats', 'Video'],
