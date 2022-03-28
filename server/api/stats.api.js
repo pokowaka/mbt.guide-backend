@@ -49,11 +49,13 @@ module.exports = function (server, mongoose, logger) {
             isDeleted: false,
             $select: ['title', 'segmentId', 'views', 'start', 'end'],
             $sort: ['-views'],
-            $limit: 20,
+            $limit: 10,
             $page: page,
           },
           Log
         );
+
+        Log.error("HERE PAGE:", page)
         const someSegments = segmentsResult.docs;
         hasNext = segmentsResult.pages.hasNext;
         page++;
