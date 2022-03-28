@@ -25,7 +25,7 @@ module.exports = function (server, mongoose, logger) {
 
       let stats = {};
       let promises = [];
-      Log.debug("HERE 1")
+      Log.error("HERE 1")
       // promises.push(RestHapi.list(Video, { isDeleted: false, $embed: ['segments'] }, Log));
       promises.push(RestHapi.list(User, { isDeleted: false, $count: true }, Log)); //dummy query
       promises.push(RestHapi.list(User, { isDeleted: false, $count: true }, Log)); //dummy query
@@ -36,7 +36,7 @@ module.exports = function (server, mongoose, logger) {
         RestHapi.list(SearchQuery, { isDeleted: false, $sort: ['-queryCount'], $limit: 15 }, Log)
       );
 
-      Log.debug("HERE 2")
+      Log.error("HERE 2")
 
       let hasNext = true;
       let page = 1;
@@ -61,7 +61,7 @@ module.exports = function (server, mongoose, logger) {
         segments = segments.concat(someSegments);
       }
 
-      Log.debug("HERE 3")
+      Log.error("HERE 3")
 
       hasNext = true;
       page = 1;
@@ -84,11 +84,11 @@ module.exports = function (server, mongoose, logger) {
         totalSearches += searchSum;
       }
 
-      Log.debug("HERE 4")
+      Log.error("HERE 4")
 
       let result = await Promise.all(promises);
 
-      Log.debug("HERE 5")
+      Log.error("HERE 5")
 
       // const videos = result[0].docs;
       // const segments = result[1].docs;
@@ -164,7 +164,7 @@ module.exports = function (server, mongoose, logger) {
         topSearchTerms,
       };
 
-      Log.debug("HERE 6")
+      Log.error("HERE 6")
 
       return stats;
     } catch (err) {
