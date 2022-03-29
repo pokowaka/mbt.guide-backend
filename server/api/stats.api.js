@@ -9,7 +9,7 @@ const Config = require('../../config');
 
 module.exports = function (server, mongoose, logger) {
   async function getCurrentStats() {
-    const Log = logger.bind(Chalk.magenta('Video Stats TEST'));
+    const Log = logger.bind(Chalk.magenta('Video Stats'));
     try {
       const Video = mongoose.model('video');
       const Segment = mongoose.model('segment');
@@ -25,18 +25,13 @@ module.exports = function (server, mongoose, logger) {
 
       let stats = {};
       let promises = [];
-      Log.error("HERE 1")
-      // promises.push(RestHapi.list(Video, { isDeleted: false, $embed: ['segments'] }, Log));
-      promises.push(RestHapi.list(User, { isDeleted: false, $count: true }, Log)); //dummy query
-      promises.push(RestHapi.list(User, { isDeleted: false, $count: true }, Log)); //dummy query
+      promises.push(RestHapi.list(Video, { isDeleted: false, $embed: ['segments'] }, Log));
       promises.push(RestHapi.list(Tag, { isDeleted: false }, Log));
       promises.push(RestHapi.list(User, { isDeleted: false, $embed: ['segments'] }, Log));
       promises.push((await fetch(ytStatsQuery)).json());
       promises.push(
         RestHapi.list(SearchQuery, { isDeleted: false, $sort: ['-queryCount'], $limit: 15 }, Log)
       );
-
-      Log.error("HERE 2")
 
       let hasNext = true;
       let page = 1;
@@ -49,21 +44,17 @@ module.exports = function (server, mongoose, logger) {
             isDeleted: false,
             $select: ['title', 'segmentId', 'views', 'start', 'end'],
             $sort: ['-views'],
-            $limit: 10,
+            $limit: 100,
             $page: page,
           },
           Log
         );
-
-        Log.error("HERE PAGE:", page)
         const someSegments = segmentsResult.docs;
         hasNext = segmentsResult.pages.hasNext;
         page++;
 
         segments = segments.concat(someSegments);
       }
-
-      Log.error("HERE 3")
 
       hasNext = true;
       page = 1;
@@ -72,7 +63,7 @@ module.exports = function (server, mongoose, logger) {
       while (hasNext) {
         const searchQueryResult = await RestHapi.list(
           SearchQuery,
-          { isDeleted: false, $limit: 20, $page: page },
+          { isDeleted: false, $limit: 100, $page: page },
           Log
         );
         const someQueries = searchQueryResult.docs;
@@ -86,28 +77,21 @@ module.exports = function (server, mongoose, logger) {
         totalSearches += searchSum;
       }
 
-      Log.error("HERE 4")
-
       let result = await Promise.all(promises);
 
-      Log.error("HERE 5")
-
-      // const videos = result[0].docs;
-      // const segments = result[1].docs;
-      const tags = result[2].docs;
-      const users = result[3].docs;
-      const ytStats = result[4];
-      const searchQueries = result[5].docs;
+      const videos = result[0].docs;
+      const tags = result[1].docs;
+      const users = result[2].docs;
+      const ytStats = result[3];
+      const searchQueries = result[4].docs;
 
       tags.sort((a, b) => b.segmentCount - a.segmentCount);
       users.sort((a, b) => b.segments.length - a.segments.length);
 
       // TODO: Get video segment count
       const tagsCreated = tags.length;
-      // const videosStarted = videos.filter((v) => v.segments.length >= 0).length;
-      // const videosCompleted = videos.filter((v) => v.segments.length >= 1).length;
-      const videosStarted = 975;
-      const videosCompleted = 975;
+      const videosStarted = videos.filter((v) => v.segments.length >= 0).length;
+      const videosCompleted = videos.filter((v) => v.segments.length >= 1).length;
       const segmentsCreated = segments.length;
       const hoursProcessed =
         segments.reduce((total, seg, index) => total + seg.end - seg.start, 0) / 60 / 60;
@@ -165,8 +149,6 @@ module.exports = function (server, mongoose, logger) {
         totalSearches,
         topSearchTerms,
       };
-
-      Log.error("HERE 6")
 
       return stats;
     } catch (err) {
@@ -484,44 +466,6 @@ module.exports = function (server, mongoose, logger) {
         handler: logVideoStatsHandler,
         auth: null,
         description: 'Log stats for the videos and segments.',
-        tags: ['api', 'Stats', 'Video'],
-        validate: {},
-        plugins: {
-          'hapi-swagger': {
-            responseMessages: [
-              { code: 200, message: 'Success' },
-              { code: 400, message: 'Bad Request' },
-              { code: 404, message: 'Not Found' },
-              { code: 500, message: 'Internal Server Error' },
-            ],
-          },
-        },
-      },
-    });
-  })();
-
-
-  // Get Video Stats Endpoint TEST
-  (function () {
-    const Log = logger.bind(Chalk.magenta('Video Stats TEST'));
-
-    Log.note('Generating Get Video Stats endpoint TEST');
-
-    const videoStatsHandlerTest = async function (request, h) {
-      try {
-        return getCurrentStats();
-      } catch (err) {
-        errorHelper.handleError(err, Log);
-      }
-    };
-
-    server.route({
-      method: 'GET',
-      path: '/stats/video/test',
-      config: {
-        handler: videoStatsHandlerTest,
-        auth: null,
-        description: 'Get stats for the videos and segments.',
         tags: ['api', 'Stats', 'Video'],
         validate: {},
         plugins: {
