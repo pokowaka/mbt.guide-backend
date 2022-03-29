@@ -432,22 +432,16 @@ module.exports = function (server, mongoose, logger) {
 
         if (lastStat) {
           const lastDate = new Date(lastStat.createdAt);
-          const lastDateHour = new Date(
+          const lastDateDay = new Date(
             lastDate.getFullYear(),
             lastDate.getMonth(),
-            lastDate.getDate(),
-            lastDate.getHours()
+            lastDate.getDate()
           );
           const today = new Date();
-          const todayHour = new Date(
-            today.getFullYear(),
-            today.getMonth(),
-            today.getDate(),
-            today.getHours()
-          );
+          const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
           // We only save stats that are unique to an hour
-          if (lastDateHour.getTime() !== todayHour.getTime()) {
+          if (lastDateDay.getTime() !== todayDay.getTime()) {
             stats = await getCurrentStats();
             await RestHapi.create(VideoStats, stats, Log);
           }
