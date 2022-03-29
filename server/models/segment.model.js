@@ -206,5 +206,8 @@ module.exports = function (mongoose) {
     },
   };
 
+  // Need index for stats
+  Schema.index({ views: -1 });
+
   return Schema;
 };
