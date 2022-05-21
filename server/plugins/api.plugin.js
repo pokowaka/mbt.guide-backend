@@ -47,6 +47,8 @@ async function register(server, options) {
 }
 
 async function getMongoCA() {
+  // Make locally available, or from env or whatevs.
+
   const mongoCertFile = Config.get('/mongoCertFile');
   const certFilePath = path.join(__dirname, `/../../utilities/${mongoCertFile}`);
 
@@ -58,6 +60,7 @@ async function getMongoCA() {
     console.log("FILE NOT FOUND, USING S3")
     return new Promise((res, rej) => {
       const s3 = new AWS.S3();
+      // If S3 change to ours.
       s3.getObject({ Bucket: 'mbt-guide-private-keys', Key: mongoCertFile }, function(
         error,
         certFileBuf

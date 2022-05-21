@@ -9,6 +9,7 @@ const permissionAuth = require('../policies/permission-auth.policy');
 const groupAuth = require('../policies/group-auth.policy');
 const rankAuth = require('../policies/role-auth.policy').rankAuth;
 const promoteAuth = require('../policies/role-auth.policy').promoteAuth;
+const { getAuth } = require("firebase-admin/auth");
 
 const Config = require('../../config');
 
@@ -23,22 +24,28 @@ require('firebase/firestore');
 const admin = require('firebase-admin');
 const AWS = require('aws-sdk');
 
-const s3 = new AWS.S3();
-s3.getObject({ Bucket: 'mbt-guide-private-keys', Key: 'mbt-guide-b41e8f3aa8b4.json' }, function(
-  error,
-  data
-) {
-  if (error != null) {
-    console.error('Error loading firebase admin cert:', error);
-  } else {
-    const serviceAccount = JSON.parse(data.Body.toString());
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      databaseURL: 'https://mbt-guide-d9b1b.firebaseio.com',
-    });
-  }
-});
+// To configure firebase for access
+// const s3 = new AWS.S3();
+// s3.getObject({ Bucket: 'mbt-guide-private-keys', Key: 'mbt-guide-b41e8f3aa8b4.json' }, function(
+//   error,
+//   data
+// ) {
+//   if (error != null) {
+//     console.error('Error loading firebase admin cert:', error);
+//   } else {
+//     const serviceAccount = JSON.parse(data.Body.toString());
+//     admin.initializeApp({
+//       credential: admin.credential.cert(serviceAccount),
+//       databaseURL: 'https://mbt-guide-d9b1b.firebaseio.com',
+//     });
+//   }
+// });
 
+console.log(admin)
+admin.initializeApp({
+  credential: admin.credential.applicationDefault(),
+//	  databaseURL: 'https://<DATABASE_NAME>.firebaseio.com'
+});
 const firebaseConfig = require('../../config/firebaseConfig');
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 
@@ -57,7 +64,7 @@ module.exports = function(mongoose) {
       lastName: {
         type: Types.String,
         required: true,
-      },
+     },
       email: {
         unique: true,
         type: Types.String,
@@ -222,8 +229,10 @@ module.exports = function(mongoose) {
         let firebaseUser;
 
         try {
-          firebaseUser = idToken ? await admin.auth().verifyIdToken(idToken) : { email, password };
+          firebaseUser = idToken ? await getAuth().verifyIdToken(idToken) : { email, password };
         } catch (err) {
+            // console.log(JSON.stringify(admin, null, 4))
+          console.log(err)
           throw Boom.unauthorized('Invalid idToken');
         }
 

@@ -282,7 +282,7 @@ const config = {
     },
     enableSwaggerHttps: {
       $filter: 'env',
-      production: true,
+      production: false, // Probably change this back.
       $default: false,
     },
     generateRouteScopes: {
