@@ -48,7 +48,6 @@ module.exports = function (server, mongoose, logger) {
 
         if (esAws) {
           // TODO: Grab region from env-vars
-          console.log("AWS ES ENDPOINT:", esEndpoint)
           const region = 'us-east-2';
           var endpoint = new AWS.Endpoint(esEndpoint);
           var aws_request = new AWS.HttpRequest(endpoint, region);
@@ -56,7 +55,7 @@ module.exports = function (server, mongoose, logger) {
           aws_request.method = 'POST';
           aws_request.path = path.join(aws_request.path, 'segment', '_search');
           aws_request.body = JSON.stringify(body);
-          aws_request.headers['host'] = domain;
+          aws_request.headers['host'] = esEndpoint;
           aws_request.headers['Content-Type'] = 'application/json';
           // Content-Length is only needed for DELETE requests that include a request
           // body, but including it for all requests doesn't seem to hurt anything.
@@ -95,8 +94,6 @@ module.exports = function (server, mongoose, logger) {
             );
           });
         } else {
-
-          console.log("LOCAL ES ENDPOINT:", esEndpoint)
           const elasticSearchClient = new elasticSearch.Client({
             host: esEndpoint,
           });
