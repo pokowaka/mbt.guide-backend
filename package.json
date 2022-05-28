@@ -16,6 +16,8 @@
     "seed-docker": "export TASK_COMMAND='npm run seed' && bash run_server.sh",
     "update-permissions": "node scripts/update-permissions.js",
     "update-permissions-docker": "export TASK_COMMAND='npm run update-permissions' && bash run_server.sh",
+    "add-captions": "node scripts/add-captions.js",
+    "add-captions-docker": "export TASK_COMMAND='npm run add-captions' && bash run_server.sh",
     "recreate-index": "node scripts/es-recreate-index.js",
     "recreate-index-docker": "export API_COMMAND='npm run start' && export TASK_COMMAND='npm run recreate-index' && bash run_server.sh",
     "reindex-segments": "node scripts/es-reindex-segments.js",
