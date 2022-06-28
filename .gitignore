@@ -407,3 +407,4 @@ franktemp
 scratchpad.txt
 test.js
 test*.json
+.env-docker copy
