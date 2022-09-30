@@ -385,7 +385,6 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-=======
 # Local
 .env
 private_keys
@@ -408,3 +407,6 @@ scratchpad.txt
 test.js
 test*.json
 .env-docker copy
+
+# My super secret.
+config/firebase-admin.json

@@ -1,4 +1,4 @@
-FROM node:erbium
+FROM node:16-buster
 
 # Create and set the working directory
 RUN mkdir /backend

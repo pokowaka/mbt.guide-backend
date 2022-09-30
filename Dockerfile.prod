@@ -1,4 +1,4 @@
-FROM node:erbium
+FROM node:16-buster
 
 # Create and set the working directory
 RUN mkdir /backend
@@ -17,7 +17,7 @@ COPY ./utilities ./utilities
 
 COPY ./index.js ./
 
-ARG SERVER_PORT=8080
+ARG SERVER_PORT=80
 # Make the server port available to the world outside this container
 EXPOSE ${SERVER_PORT}
 

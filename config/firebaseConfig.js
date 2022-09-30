@@ -1,9 +1,8 @@
 module.exports = {
-  apiKey: 'AIzaSyAn6loR5s_OC4aqA-nlMfpwOH2BogTM79g',
-  authDomain: 'mbt-guide-d9b1b.firebaseapp.com',
-  databaseURL: 'https://mbt-guide-d9b1b.firebaseio.com',
-  projectId: 'mbt-guide-d9b1b',
-  storageBucket: 'gs://mbt-guide-d9b1b.appspot.com/',
-  messagingSenderId: '461006931750',
-  appId: '1:461006931750:web:3c39f2584c45ac7c',
+  apiKey: 'AIzaSyCZagAf3bGwKE5PI-URzIDgIm-1okbRACI',
+  authDomain: 'twim-knowledge.firebaseapp.com',
+  projectId: 'twim-knowledge',
+  storageBucket: 'twim-knowledge.appspot.com',
+  messagingSenderId: '903042123796',
+  appId: '1:903042123796:web:b0a286a5e30d2567faff01',
 };
