@@ -96,7 +96,7 @@ async function getSegments(limit = 50, page = 1) {
 
 async function bulkIndexSegments(segments) {
   const body = segments.flatMap((segment) => [
-    { update: { _index: 'segment', _type: '_doc', _id: segment._id } },
+    { update: { _index: 'segment', _id: segment._id } },
     {
       doc: {
         title: segment.title,

@@ -29,9 +29,14 @@ async function recreateIndex() {
 }
 
 async function deleteIndex() {
-  await elasticSearchClient.indices.delete({
-    index: 'segment',
-  });
+  try {
+    await elasticSearchClient.indices.delete({
+      index: 'segment',
+    });
+    console.log('ELASTICSEARCH INDEX DELETED');
+  } catch (error) {
+    console.log(`ELASTICSEARCH DID NOT DELETE INDEX: ${error.message}`);
+  }
 }
 
 async function createIndex() {
@@ -39,6 +44,7 @@ async function createIndex() {
     index: 'segment',
   });
 
+  console.log('ELASTICSEARCH INDEX CREATED');
   await elasticSearchClient.indices.putMapping({
     index: 'segment',
     body: {
@@ -55,6 +61,7 @@ async function createIndex() {
       },
     },
   });
+  console.log('ELASTICSEARCH INDEX MAPPED');
 }
 
 recreateIndex();

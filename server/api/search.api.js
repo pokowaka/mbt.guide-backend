@@ -102,7 +102,6 @@ module.exports = function (server, mongoose, logger) {
             elasticSearchClient.search(
               {
                 index: 'segment',
-                type: '_doc',
                 body,
               },
               function (error, res, status) {
