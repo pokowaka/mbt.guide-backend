@@ -1,4 +1,4 @@
-FROM node:16-buster
+FROM node:12.22.12
 
 # Create and set the working directory
 RUN mkdir /backend
@@ -14,4 +14,5 @@ RUN npm install
 ARG SERVER_PORT=8080
 # Make the server port available to the world outside this container
 EXPOSE ${SERVER_PORT}
-
+RUN mkdir /config
+COPY ./config/firebase-admin.json /config
