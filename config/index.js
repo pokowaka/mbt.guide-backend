@@ -61,12 +61,12 @@ const constants = {
     FOR_IP_AND_USER: 5,
   },
   LOCKOUT_PERIOD: 30, // in units of minutes
-  API_TITLE: 'mbt.guide API',
-  WEB_TITLE: 'mbt.guide',
+  API_TITLE: 'twinm.guide API',
+  WEB_TITLE: 'twim.guide',
 };
 
 const config = {
-  $meta: 'This file configures the mbt.guide API.',
+  $meta: 'This file configures the twim.guide API.',
   constants: constants,
   projectName: constants.API_TITLE,
   port: {
@@ -81,8 +81,8 @@ const config = {
   },
   S3BucketName: {
     $filter: 'env',
-    production: 'mbt.guide-cdn',
-    $default: 'mbt.guide-cdn',
+    production: 'twim.guide-cdn',
+    $default: 'twim.guide-cdn',
   },
   jwtSecret: {
     $filter: 'env',
@@ -121,7 +121,7 @@ const config = {
       port: 465,
       secure: true,
       auth: {
-        user: 'appyhapi@gmail.com',
+        user: 'unknown@twimknowledge.org',
         pass: process.env.SMTP_PASSWORD,
       },
     },
@@ -130,7 +130,7 @@ const config = {
       port: 465,
       secure: true,
       auth: {
-        user: 'appyhapi@gmail.com',
+        user: 'unknown@twimknowledge.org',
         pass: process.env.SMTP_PASSWORD,
       },
     },
@@ -143,28 +143,28 @@ const config = {
   defaultEmail: {
     $filter: 'env',
     production: null,
-    $default: 'appyhapi@gmail.com',
+    $default: 'unknown@twimknowledge.org',
   },
   system: {
     $filter: 'env',
     production: {
       fromAddress: {
-        name: 'mbt.guide',
-        address: 'appyhapi@gmail.com',
+        name: 'twim.guide',
+        address: 'unknown@twimknowledge.org',
       },
       toAddress: {
-        name: 'mbt.guide',
-        address: 'appyhapi@gmail.com',
+        name: 'twim.guide',
+        address: 'unknown@twimknowledge.org',
       },
     },
     $default: {
       fromAddress: {
-        name: 'mbt.guide',
-        address: 'appyhapi@gmail.com',
+        name: 'twim.guide',
+        address: 'unknown@twimknowledge.org',
       },
       toAddress: {
-        name: 'mbt.guide',
-        address: 'appyhapi@gmail.com',
+        name: 'twim.guide',
+        address: 'unknown@twimknowledge.org',
       },
     },
   },

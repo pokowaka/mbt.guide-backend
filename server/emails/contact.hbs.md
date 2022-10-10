@@ -8,4 +8,4 @@
 
 Love,
 
-The mbt.guide Team
+The twim.guide Team

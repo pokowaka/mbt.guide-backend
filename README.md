@@ -21,7 +21,7 @@ You need [Node.js](https://nodejs.org/en/) (>=8.10.0) installed and you'll need 
 ## Installation
 
 ```
-$ git clone https://github.com/cusac/mbt.guide-backend.git
+$ git clone https://github.com/pokowaka/mbt.guide-backend.git
 $ cd mbt.guide-backend
 $ npm install
 ```
