@@ -410,3 +410,5 @@ test*.json
 
 # My super secret.
 config/firebase-admin.json
+.gitsecret/keys/random_seed
+!*.secret
