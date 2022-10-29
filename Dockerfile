@@ -1,4 +1,4 @@
-FROM node:12.22.12
+FROM node:18-alpine
 
 # Create and set the working directory
 RUN mkdir /backend
@@ -8,8 +8,9 @@ WORKDIR /backend
 # NOTE: For a production image, we should COPY all files so that the image is self-sufficient (and only use volumes
 #   for data storage/persistent data).
 COPY ./package.json /backend
+COPY ./package-lock.json /backend
 # Install node dependencies
-RUN npm install
+RUN npm ci
 
 ARG SERVER_PORT=8080
 # Make the server port available to the world outside this container

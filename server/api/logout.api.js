@@ -1,6 +1,6 @@
 'use strict';
 
-const Joi = require('@hapi/joi');
+const Joi = require('joi');
 const Boom = require('@hapi/boom');
 const Chalk = require('chalk');
 const errorHelper = require('../utilities/error-helper');
@@ -10,9 +10,9 @@ const auditLog = require('../policies/audit-log.policy');
 
 const authStrategy = Config.get('/restHapiConfig/authStrategy');
 
-module.exports = function(server, mongoose, logger) {
+module.exports = function (server, mongoose, logger) {
   // Logout Endpoint
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Logout'));
     const Session = mongoose.model('session');
 
@@ -22,7 +22,7 @@ module.exports = function(server, mongoose, logger) {
 
     Log.note('Generating Logout endpoint');
 
-    const logoutHandler = async function(request, h) {
+    const logoutHandler = async function (request, h) {
       try {
         const credentials = request.auth.credentials || { session: null };
         const session = credentials.session;

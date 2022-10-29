@@ -1,4 +1,4 @@
-const elasticSearch = require('elasticsearch');
+const elasticSearch = require('@elastic/elasticsearch');
 
 const elasticSearchClient = new elasticSearch.Client({
   host: process.env.ES_ENDPOINT,

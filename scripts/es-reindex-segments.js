@@ -1,4 +1,4 @@
-const elasticSearch = require('elasticsearch');
+const elasticSearch = require('@elastic/elasticsearch');
 const axios = require('axios');
 const fs = require('fs');
 const qs = require('querystring');

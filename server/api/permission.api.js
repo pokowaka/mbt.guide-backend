@@ -1,6 +1,6 @@
 'use strict';
 
-const Joi = require('@hapi/joi');
+const Joi = require('joi');
 const Chalk = require('chalk');
 const RestHapi = require('rest-hapi');
 const errorHelper = require('../utilities/error-helper');
@@ -13,15 +13,15 @@ const headersValidation = Joi.object({
   authorization: Joi.string().required(),
 }).options({ allowUnknown: true });
 
-module.exports = function(server, mongoose, logger) {
+module.exports = function (server, mongoose, logger) {
   // Get Available Permissions Endpoint
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Get Available Permissions'));
     const Permission = mongoose.model('permission');
 
     Log.note('Get Available Permissions endpoint');
 
-    const getAvailablePermissionsHandler = async function(request, h) {
+    const getAvailablePermissionsHandler = async function (request, h) {
       try {
         Log.log('query(%s)', JSON.stringify(request.query));
 

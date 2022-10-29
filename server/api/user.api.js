@@ -1,6 +1,6 @@
 'use strict';
 
-const Joi = require('@hapi/joi');
+const Joi = require('joi');
 const Boom = require('@hapi/boom');
 const Chalk = require('chalk');
 const _ = require('lodash');
@@ -25,13 +25,13 @@ const headersValidation = Joi.object({
   authorization: Joi.string().required(),
 }).options({ allowUnknown: true });
 
-module.exports = function(server, mongoose, logger) {
+module.exports = function (server, mongoose, logger) {
   // Check Email Endpoint
   // NOTE: For more secure applications, this endpoint should either be disabled or authenticated. For more information
   // as to why, refer to the links below:
   // https://postmarkapp.com/guides/password-reset-email-best-practices
   // https://security.stackexchange.com/questions/40694/disclose-to-user-if-account-exists
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Check Email'));
     const User = mongoose.model('user');
 
@@ -39,7 +39,7 @@ module.exports = function(server, mongoose, logger) {
 
     Log.note('Generating Check Email endpoint for ' + collectionName);
 
-    const checkEmailHandler = async function(request, h) {
+    const checkEmailHandler = async function (request, h) {
       try {
         let result = await User.findOne({ email: request.payload.email });
         if (result) {
@@ -82,7 +82,7 @@ module.exports = function(server, mongoose, logger) {
   })();
 
   // Check Password Strength Endpoint
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Check Password Strength'));
     const User = mongoose.model('user');
 
@@ -90,7 +90,7 @@ module.exports = function(server, mongoose, logger) {
 
     Log.note('Generating Check Password Strength endpoint for ' + collectionName);
 
-    const checkPasswordHandler = async function(request, h) {
+    const checkPasswordHandler = async function (request, h) {
       try {
         const results = zxcvbn(request.payload.password);
 
@@ -131,7 +131,7 @@ module.exports = function(server, mongoose, logger) {
   })();
 
   // Update Current User Password Endpoint
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Update Current User Password'));
     const User = mongoose.model('user');
 
@@ -142,7 +142,7 @@ module.exports = function(server, mongoose, logger) {
     const updateCurrentUserPasswordPre = [
       {
         assign: 'passwordCheck',
-        method: async function(request, h) {
+        method: async function (request, h) {
           try {
             const results = zxcvbn(request.payload.password);
 
@@ -171,7 +171,7 @@ module.exports = function(server, mongoose, logger) {
       },
       {
         assign: 'password',
-        method: async function(request, h) {
+        method: async function (request, h) {
           try {
             let hashedPassword = await User.generateHash(request.payload.password, Log);
             return hashedPassword;
@@ -182,7 +182,7 @@ module.exports = function(server, mongoose, logger) {
       },
     ];
 
-    const updateCurrentUserPasswordHandler = async function(request, h) {
+    const updateCurrentUserPasswordHandler = async function (request, h) {
       try {
         const _id = request.auth.credentials.user._id;
 
@@ -234,7 +234,7 @@ module.exports = function(server, mongoose, logger) {
   })();
 
   // Update Current User PIN Endpoint
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Update Current User PIN'));
     const User = mongoose.model('user');
 
@@ -245,7 +245,7 @@ module.exports = function(server, mongoose, logger) {
     const updateCurrentUserPINPre = [
       {
         assign: 'pin',
-        method: async function(request, h) {
+        method: async function (request, h) {
           try {
             let hashedPin = await User.generateHash(request.payload.pin, Log);
             return hashedPin;
@@ -256,7 +256,7 @@ module.exports = function(server, mongoose, logger) {
       },
     ];
 
-    const updateCurrentUserPINHandler = async function(request, h) {
+    const updateCurrentUserPINHandler = async function (request, h) {
       try {
         const _id = request.auth.credentials.user._id;
 
@@ -305,7 +305,7 @@ module.exports = function(server, mongoose, logger) {
   })();
 
   // Update Current User Profile Endpoint
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Update Current User Profile'));
     const User = mongoose.model('user');
 
@@ -316,7 +316,7 @@ module.exports = function(server, mongoose, logger) {
     const updateCurrentUserProfilePre = [
       {
         assign: 'emailCheck',
-        method: async function(request, h) {
+        method: async function (request, h) {
           try {
             if (
               !request.payload.profile.email ||
@@ -343,7 +343,7 @@ module.exports = function(server, mongoose, logger) {
       },
     ];
 
-    const updateCurrentUserProfileHandler = async function(request, h) {
+    const updateCurrentUserProfileHandler = async function (request, h) {
       try {
         const _id = request.auth.credentials.user._id;
 
@@ -396,7 +396,7 @@ module.exports = function(server, mongoose, logger) {
   })();
 
   // Delete Current User Endpoint
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Delete Current User'));
     const User = mongoose.model('user');
 
@@ -404,7 +404,7 @@ module.exports = function(server, mongoose, logger) {
 
     Log.note('Generating Delete Current User endpoint for ' + collectionName);
 
-    const deleteCurrentUserHandler = async function(request, h) {
+    const deleteCurrentUserHandler = async function (request, h) {
       try {
         const _id = request.auth.credentials.user._id;
 
@@ -444,7 +444,7 @@ module.exports = function(server, mongoose, logger) {
   })();
 
   // Enable Account Endpoint
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Enable Account'));
     const User = mongoose.model('user');
 
@@ -452,7 +452,7 @@ module.exports = function(server, mongoose, logger) {
 
     Log.note('Generating Enable Account endpoint for ' + collectionName);
 
-    const enableAccountHandler = async function(request, h) {
+    const enableAccountHandler = async function (request, h) {
       try {
         const _id = request.params._id;
 
@@ -495,7 +495,7 @@ module.exports = function(server, mongoose, logger) {
   })();
 
   // Disable Account Endpoint
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Disable Account'));
     const User = mongoose.model('user');
 
@@ -503,7 +503,7 @@ module.exports = function(server, mongoose, logger) {
 
     Log.note('Generating Disable Account endpoint for ' + collectionName);
 
-    const disableAccountHandler = async function(request, h) {
+    const disableAccountHandler = async function (request, h) {
       try {
         const _id = request.params._id;
 
@@ -546,7 +546,7 @@ module.exports = function(server, mongoose, logger) {
   })();
 
   // Activate Account Endpoint
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Activate Account'));
     const User = mongoose.model('user');
 
@@ -554,7 +554,7 @@ module.exports = function(server, mongoose, logger) {
 
     Log.note('Generating Activate Account endpoint for ' + collectionName);
 
-    const activateAccountHandler = async function(request, h) {
+    const activateAccountHandler = async function (request, h) {
       try {
         const _id = request.params._id;
 
@@ -597,7 +597,7 @@ module.exports = function(server, mongoose, logger) {
   })();
 
   // Deactivate Account Endpoint
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Deactivate Account'));
     const User = mongoose.model('user');
 
@@ -605,7 +605,7 @@ module.exports = function(server, mongoose, logger) {
 
     Log.note('Generating Deactivate Account endpoint for ' + collectionName);
 
-    const deactivateAccountHandler = async function(request, h) {
+    const deactivateAccountHandler = async function (request, h) {
       try {
         const _id = request.params._id;
 
@@ -648,7 +648,7 @@ module.exports = function(server, mongoose, logger) {
   })();
 
   // Get User Scope Endpoint
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Get User Scope'));
     const User = mongoose.model('user');
     const Permission = mongoose.model('permission');
@@ -657,7 +657,7 @@ module.exports = function(server, mongoose, logger) {
 
     Log.note('Generating Get User Scope endpoint for ' + collectionName);
 
-    const getUserScopeHandler = async function(request, h) {
+    const getUserScopeHandler = async function (request, h) {
       try {
         return await Permission.getScope({ _id: request.params._id }, Log);
       } catch (err) {
@@ -696,7 +696,7 @@ module.exports = function(server, mongoose, logger) {
   })();
 
   // Get User Connection Stats Endpoint
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Get User Connection Stats'));
     const User = mongoose.model('user');
     const Connection = mongoose.model('connection');
@@ -705,7 +705,7 @@ module.exports = function(server, mongoose, logger) {
 
     Log.note('Generating Get User Connection Stats endpoint for ' + collectionName);
 
-    const getUserConnectionStatsHandler = async function(request, h) {
+    const getUserConnectionStatsHandler = async function (request, h) {
       try {
         const promises = [];
 

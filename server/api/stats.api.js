@@ -3,7 +3,7 @@
 const Chalk = require('chalk');
 const RestHapi = require('rest-hapi');
 const errorHelper = require('../utilities/error-helper');
-const fetch = require('node-fetch');
+// const fetch = require('cross-fetch'); //require('cross-fetch');
 
 const Config = require('../../config');
 

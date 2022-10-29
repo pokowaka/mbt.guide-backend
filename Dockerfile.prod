@@ -1,4 +1,4 @@
-FROM node:16-buster
+FROM node:18-alpine
 
 # Create and set the working directory
 RUN mkdir /backend
@@ -8,7 +8,7 @@ COPY package.json ./
 COPY package-lock.json ./
 
 # Install node dependencies
-RUN npm install
+RUN npm ci
 
 COPY ./server ./server
 COPY ./scripts ./scripts

@@ -1,11 +1,10 @@
 'use strict';
 
 const Chalk = require('chalk');
-const Joi = require('@hapi/joi');
+const Joi = require('joi');
 const Boom = require('@hapi/boom');
 const RestHapi = require('rest-hapi');
-const fetch = require('node-fetch');
-const elasticSearch = require('elasticsearch');
+const elasticSearch = require('@elastic/elasticsearch');
 const errorHelper = require('../utilities/error-helper');
 const path = require('path');
 const Config = require('../../config');

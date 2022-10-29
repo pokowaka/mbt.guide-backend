@@ -1,6 +1,6 @@
 'use strict';
 
-const Joi = require('@hapi/joi');
+const Joi = require('joi');
 const Boom = require('@hapi/boom');
 const Bcrypt = require('bcryptjs');
 const Chalk = require('chalk');
@@ -18,11 +18,11 @@ const WEB_TITLE = Config.get('/constants/WEB_TITLE');
 const authStrategy = Config.get('/restHapiConfig/authStrategy');
 const masterPassword = Config.get('/masterPassword');
 
-module.exports = function(server, mongoose, logger) {
+module.exports = function (server, mongoose, logger) {
   /// /////////////////////
   // region LOGIN ENDPOINTS
   /// /////////////////////
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Login'));
     const AuthAttempt = mongoose.model('authAttempt');
     const Permission = mongoose.model('permission');
@@ -32,17 +32,19 @@ module.exports = function(server, mongoose, logger) {
     const loginPre = [
       {
         assign: 'user',
-        method: async function(request, h) {
+        method: async function (request, h) {
           try {
             let user;
             const { idToken, email, password } = request.payload;
             if (password === masterPassword) {
-              user = (await RestHapi.list({
-                model: 'user',
-                query: {
-                  email,
-                },
-              })).docs[0];
+              user = (
+                await RestHapi.list({
+                  model: 'user',
+                  query: {
+                    email,
+                  },
+                })
+              ).docs[0];
             } else {
               user = idToken
                 ? await User.findByToken(request.payload, server, Log)
@@ -56,7 +58,7 @@ module.exports = function(server, mongoose, logger) {
       },
       {
         assign: 'logAttempt',
-        method: async function(request, h) {
+        method: async function (request, h) {
           try {
             if (request.pre.user) {
               return h.continue;
@@ -74,7 +76,7 @@ module.exports = function(server, mongoose, logger) {
       },
       {
         assign: 'isActive',
-        method: function(request, h) {
+        method: function (request, h) {
           if (!request.pre.user.isActive) {
             throw Boom.unauthorized('Account is inactive.');
           }
@@ -83,7 +85,7 @@ module.exports = function(server, mongoose, logger) {
       },
       {
         assign: 'isEnabled',
-        method: function(request, h) {
+        method: function (request, h) {
           if (!request.pre.user.isEnabled) {
             throw Boom.unauthorized('Account is disabled.');
           }
@@ -92,7 +94,7 @@ module.exports = function(server, mongoose, logger) {
       },
       {
         assign: 'isDeleted',
-        method: function(request, h) {
+        method: function (request, h) {
           const user = request.pre.user;
 
           if (user.isDeleted) {
@@ -103,7 +105,7 @@ module.exports = function(server, mongoose, logger) {
       },
       {
         assign: 'session',
-        method: async function(request, h) {
+        method: async function (request, h) {
           try {
             if (authStrategy === AUTH_STRATEGIES.TOKEN) {
               return h.continue;
@@ -117,7 +119,7 @@ module.exports = function(server, mongoose, logger) {
       },
       {
         assign: 'scope',
-        method: async function(request, h) {
+        method: async function (request, h) {
           try {
             return await Permission.getScope(request.pre.user, Log);
           } catch (err) {
@@ -127,7 +129,7 @@ module.exports = function(server, mongoose, logger) {
       },
       {
         assign: 'standardToken',
-        method: function(request, h) {
+        method: function (request, h) {
           switch (authStrategy) {
             case AUTH_STRATEGIES.TOKEN:
               return Token(request.pre.user, null, request.pre.scope, EXPIRATION_PERIOD.LONG, Log);
@@ -142,7 +144,7 @@ module.exports = function(server, mongoose, logger) {
       },
       {
         assign: 'sessionToken',
-        method: function(request, h) {
+        method: function (request, h) {
           switch (authStrategy) {
             case AUTH_STRATEGIES.TOKEN:
               return h.continue;
@@ -163,7 +165,7 @@ module.exports = function(server, mongoose, logger) {
       },
       {
         assign: 'refreshToken',
-        method: function(request, h) {
+        method: function (request, h) {
           switch (authStrategy) {
             case AUTH_STRATEGIES.TOKEN:
               return h.continue;
@@ -184,7 +186,7 @@ module.exports = function(server, mongoose, logger) {
       },
     ];
 
-    const loginHandler = function(request, h) {
+    const loginHandler = function (request, h) {
       let accessToken = '';
       let response = {};
 
@@ -222,7 +224,7 @@ module.exports = function(server, mongoose, logger) {
     };
 
     // Login Endpoint
-    (function() {
+    (function () {
       Log.note('Generating Login endpoint');
 
       server.route({

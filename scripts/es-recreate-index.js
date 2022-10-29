@@ -1,4 +1,4 @@
-const elasticSearch = require('elasticsearch');
+const elasticSearch = require('@elastic/elasticsearch');
 
 require('dotenv').config();
 

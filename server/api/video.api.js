@@ -1,6 +1,6 @@
 'use strict';
 
-const Joi = require('@hapi/joi');
+const Joi = require('joi');
 const Boom = require('@hapi/boom');
 const Chalk = require('chalk');
 const RestHapi = require('rest-hapi');
@@ -162,7 +162,7 @@ module.exports = function (server, mongoose, logger) {
         auth: {
           strategy: authStrategy,
         },
-        description: `Update the segments of a video. This endpoint is meant to take as payload 
+        description: `Update the segments of a video. This endpoint is meant to take as payload
         the desired state of a video's segments. It will then perform the CRUD operations required
         to update the database to match the desired state.`,
         tags: ['api', 'Video', 'Segments'],

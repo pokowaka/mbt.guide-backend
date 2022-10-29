@@ -1,6 +1,6 @@
 'use strict';
 
-const Joi = require('@hapi/joi');
+const Joi = require('joi');
 const Boom = require('@hapi/boom');
 const Chalk = require('chalk');
 const RestHapi = require('rest-hapi');
@@ -15,13 +15,13 @@ const headersValidation = Joi.object({
   authorization: Joi.string().required(),
 }).options({ allowUnknown: true });
 
-module.exports = function(server, mongoose, logger) {
+module.exports = function (server, mongoose, logger) {
   // Create the chat subscription
-  (function() {
+  (function () {
     // const Log = logger.bind(Chalk.magenta('Chat Subscription'))
 
     server.subscription('/chat/{userId}', {
-      filter: function(path, message, options) {
+      filter: function (path, message, options) {
         return true;
       },
       auth: {
@@ -29,16 +29,16 @@ module.exports = function(server, mongoose, logger) {
         entity: 'user',
         index: true,
       },
-      onSubscribe: function(socket, path, params) {},
+      onSubscribe: function (socket, path, params) {},
     });
   })(
     // Mark conversation as read
-    (function() {
+    (function () {
       const Log = logger.bind(Chalk.magenta('Mark Conversation As Read'));
 
       Log.note('Generating Mark Conversation As Read Endpoint for Chat');
 
-      const markAsReadHandler = async function(request, h) {
+      const markAsReadHandler = async function (request, h) {
         try {
           const Conversation = mongoose.model('conversation');
           const User = mongoose.model('user');
@@ -86,12 +86,12 @@ module.exports = function(server, mongoose, logger) {
   );
 
   // Mark conversation as unread
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Mark Conversation As Unread'));
 
     Log.note('Generating Mark Conversation As Unread Endpoint for Chat');
 
-    const markAsUnreadHandler = async function(request, h) {
+    const markAsUnreadHandler = async function (request, h) {
       try {
         const Conversation = mongoose.model('conversation');
         const User = mongoose.model('user');
@@ -138,12 +138,12 @@ module.exports = function(server, mongoose, logger) {
   })();
 
   // Get the current user's conversations
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Get Current User Conversations'));
 
     Log.note('Generating Get Current User Conversations Endpoint for Chat');
 
-    const getConversationsHandler = async function(request, h) {
+    const getConversationsHandler = async function (request, h) {
       try {
         const Conversation = mongoose.model('conversation');
         const query = {
@@ -157,7 +157,7 @@ module.exports = function(server, mongoose, logger) {
 
         let result = await RestHapi.list(Conversation, query, Log);
 
-        result.docs.forEach(function(conversation) {
+        result.docs.forEach(function (conversation) {
           formatConversation(request, conversation);
         });
 
@@ -196,12 +196,12 @@ module.exports = function(server, mongoose, logger) {
   })();
 
   // Get the conversation between the current user and other users
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Get Current User Conversation'));
 
     Log.note('Generating Get Current User Conversation Endpoint for Chat');
 
-    const getConversationHandler = async function(request, h) {
+    const getConversationHandler = async function (request, h) {
       try {
         const Conversation = mongoose.model('conversation');
         const User = mongoose.model('user');
@@ -243,7 +243,7 @@ module.exports = function(server, mongoose, logger) {
         let result = await promise;
 
         if (request.query.conversation) {
-          let me = result.users.find(function(user) {
+          let me = result.users.find(function (user) {
             return user._id.toString() === request.auth.credentials.user._id.toString();
           });
           if (!me) {
@@ -285,7 +285,7 @@ module.exports = function(server, mongoose, logger) {
         conversation = result;
         if (newConversation) {
           // Associate the user data with the new conversation
-          let users = conversation.users.map(function(user) {
+          let users = conversation.users.map(function (user) {
             return user._id;
           });
           conversation.hasRead = false;
@@ -332,12 +332,12 @@ module.exports = function(server, mongoose, logger) {
   })();
 
   // Post chat messages
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Post Message'));
 
     Log.note('Generating Post Message endpoint for Chat');
 
-    const postMessageHandler = async function(request, h) {
+    const postMessageHandler = async function (request, h) {
       try {
         const Message = mongoose.model('message');
         const Conversation = mongoose.model('conversation');
@@ -358,7 +358,7 @@ module.exports = function(server, mongoose, logger) {
         let conversation = result[0];
         let message = result[1];
         Log.debug('MESSAGE:', message);
-        conversation.users.forEach(function(userId) {
+        conversation.users.forEach(function (userId) {
           server.publish('/chat/' + userId, message);
         });
         return 'published';
@@ -403,12 +403,12 @@ module.exports = function(server, mongoose, logger) {
     });
   })();
 
-  const formatConversation = function(request, conversation) {
+  const formatConversation = function (request, conversation) {
     // Remove the current user from the list of users since it's implied
-    conversation.users = conversation.users.filter(function(user) {
+    conversation.users = conversation.users.filter(function (user) {
       return user._id.toString() !== request.auth.credentials.user._id.toString();
     });
-    conversation.users = conversation.users.map(function(user) {
+    conversation.users = conversation.users.map(function (user) {
       return {
         _id: user._id,
         firstName: user.firstName,
@@ -428,7 +428,7 @@ module.exports = function(server, mongoose, logger) {
         request.auth.credentials.user._id.toString();
     }
     if (conversation.userData) {
-      let currentUserData = conversation.userData.find(function(userData) {
+      let currentUserData = conversation.userData.find(function (userData) {
         return userData.user._id.toString() === request.auth.credentials.user._id.toString();
       });
 

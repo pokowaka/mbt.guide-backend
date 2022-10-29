@@ -1,19 +1,19 @@
 'use strict';
 
-const Joi = require('@hapi/joi');
+const Joi = require('joi');
 const Chalk = require('chalk');
 const errorHelper = require('../utilities/error-helper');
 
 const Config = require('../../config');
 
-module.exports = function(server, mongoose, logger) {
+module.exports = function (server, mongoose, logger) {
   // Contact Endpoint
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Contact'));
 
     Log.note('Generating Contact endpoint');
 
-    const contactHandler = async function(request, h) {
+    const contactHandler = async function (request, h) {
       try {
         const mailer = request.server.plugins.mailer;
         const emailOptions = {
@@ -44,9 +44,7 @@ module.exports = function(server, mongoose, logger) {
         validate: {
           payload: {
             name: Joi.string().required(),
-            email: Joi.string()
-              .email()
-              .required(),
+            email: Joi.string().email().required(),
             message: Joi.string().required(),
           },
         },

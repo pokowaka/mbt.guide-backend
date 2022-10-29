@@ -5,7 +5,7 @@ process.env.NODE_ENV = 'local';
 const path = require('path');
 const Mongoose = require('mongoose');
 const RestHapi = require('rest-hapi');
-const faker = require('faker');
+const fake = require('@faker-js/faker');
 const iplocation = require('iplocation');
 const Glue = require('@hapi/glue');
 const updatePermissions = require('../utilities/update-permissions.utility');
@@ -32,13 +32,10 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
     };
 
     const manifest = Manifest.get('/');
-    const server = await Glue.compose(
-      manifest,
-      composeOptions
-    );
+    const server = await Glue.compose(manifest, composeOptions);
 
     await server.start();
-
+    let faker = fake.faker;
     faker.seed(4997);
 
     const pin = '1234';
@@ -290,7 +287,7 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
 
     result = await RestHapi.list(models.permission, {}, Log);
     permissions = result.docs;
-    permissionNames = permissions.map(function(p) {
+    permissionNames = permissions.map(function (p) {
       return p.name;
     });
 
@@ -319,14 +316,14 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
     ];
 
     let userDocumentPermissions = permissions
-      .filter(function(p) {
+      .filter(function (p) {
         // We start with permissions Admins can assign so that they can edit the user permissions
         return p.assignScope.indexOf(USER_ROLES.ADMIN) > -1;
       })
-      .filter(function(p) {
+      .filter(function (p) {
         return p.name.includes('Document');
       })
-      .map(function(p) {
+      .map(function (p) {
         return {
           state: PERMISSION_STATES.INCLUDED,
           childId: p._id,
@@ -334,14 +331,14 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
       });
 
     let userImagePermissions = permissions
-      .filter(function(p) {
+      .filter(function (p) {
         // We start with permissions Admins can assign so that they can edit the user permissions
         return p.assignScope.indexOf(USER_ROLES.ADMIN) > -1;
       })
-      .filter(function(p) {
+      .filter(function (p) {
         return p.name.includes('Image');
       })
-      .map(function(p) {
+      .map(function (p) {
         return {
           state: PERMISSION_STATES.INCLUDED,
           childId: p._id,
@@ -349,10 +346,10 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
       });
 
     let userPermissions = userBasePermissionNames
-      .map(function(permissionName) {
+      .map(function (permissionName) {
         return {
           state: PERMISSION_STATES.INCLUDED,
-          childId: permissions.find(function(p) {
+          childId: permissions.find(function (p) {
             return p.name === permissionName;
           })._id,
         };
@@ -377,10 +374,10 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
 
     // Admins have access to any permission they can assign.
     adminPermissions = permissions
-      .filter(function(p) {
+      .filter(function (p) {
         return p.assignScope.indexOf(USER_ROLES.ADMIN) > -1;
       })
-      .map(function(p) {
+      .map(function (p) {
         return {
           state: PERMISSION_STATES.INCLUDED,
           childId: p._id,
@@ -412,7 +409,7 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
         [
           {
             state: PERMISSION_STATES.INCLUDED,
-            childId: permissions.find(function(p) {
+            childId: permissions.find(function (p) {
               return p.name === 'root';
             })._id,
           },
@@ -427,14 +424,14 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
 
     // Read Only group permissions
     let readOnlyExcludedPermissions = permissions
-      .filter(function(p) {
+      .filter(function (p) {
         // We start with permissions Admins can assign so that they will also be able to assign the group
         return p.assignScope.indexOf(USER_ROLES.ADMIN) > -1;
       })
-      .filter(function(p) {
+      .filter(function (p) {
         return !(p.name.includes('read') || p.name.includes('get'));
       })
-      .map(function(p) {
+      .map(function (p) {
         return {
           state: PERMISSION_STATES.EXCLUDED,
           childId: p._id,
@@ -457,14 +454,14 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
 
     // Editor group permissions
     let createForbiddenPermission = permissions
-      .filter(function(p) {
+      .filter(function (p) {
         // We start with permissions Admins can assign so that they will also be able to assign the group
         return p.assignScope.indexOf(USER_ROLES.ADMIN) > -1;
       })
-      .filter(function(p) {
+      .filter(function (p) {
         return p.name.includes('create');
       })
-      .map(function(p) {
+      .map(function (p) {
         return {
           state: PERMISSION_STATES.FORBIDDEN,
           childId: p._id,
@@ -487,13 +484,13 @@ const PERMISSION_STATES = Config.get('/constants/PERMISSION_STATES');
 
     // Super User group permissions
     let includedPermissions = permissionNames
-      .filter(function(permissionName) {
+      .filter(function (permissionName) {
         return permissionName !== 'root';
       })
-      .map(function(permissionName) {
+      .map(function (permissionName) {
         return {
           state: PERMISSION_STATES.INCLUDED,
-          childId: permissions.find(function(p) {
+          childId: permissions.find(function (p) {
             return p.name === permissionName;
           })._id,
         };

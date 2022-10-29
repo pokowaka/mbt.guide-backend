@@ -1,16 +1,16 @@
 'use strict';
 
 const Chalk = require('chalk');
-const Joi = require('@hapi/joi');
+const Joi = require('joi');
 const Boom = require('@hapi/boom');
-const fetch = require('node-fetch');
+// const fetch = require('cross-fetch'); // require('cross-fetch');
 const errorHelper = require('../utilities/error-helper');
 
 const Config = require('../../config');
 
-module.exports = function(server, mongoose, logger) {
+module.exports = function (server, mongoose, logger) {
   // Youtube API Endpoint
-  (function() {
+  (function () {
     const Log = logger.bind(Chalk.magenta('Youtube'));
 
     Log.note('Generating Youtube API endpoint');
@@ -19,7 +19,7 @@ module.exports = function(server, mongoose, logger) {
     // We restrict api calls to Tom's youtube channel
     const channelId = 'UCYwlraEwuFB4ZqASowjoM0g';
 
-    const youtubeAPIHandler = async function(request, h) {
+    const youtubeAPIHandler = async function (request, h) {
       try {
         let { endpoint, params } = request.payload;
         let url = `https://www.googleapis.com/youtube/v3/${endpoint}`;
