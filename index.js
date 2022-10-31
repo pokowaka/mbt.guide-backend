@@ -7,11 +7,15 @@ const Config = require('./config');
 const composeOptions = {
   relativeTo: __dirname,
 };
+const reindex = require('./scripts/es-recreate-index');
 
 const startServer = async function () {
   try {
     const manifest = Manifest.get('/');
     const server = await Glue.compose(manifest, composeOptions);
+
+    // Let's start with initializing elastic search..
+    await reindex.createIfNotExists();
 
     await server.start();
 

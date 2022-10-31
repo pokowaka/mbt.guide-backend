@@ -7,7 +7,7 @@ function sleep(ms) {
 }
 
 const elasticSearchClient = new elasticSearch.Client({
-  host: process.env.ES_ENDPOINT,
+  node: process.env.ES_ENDPOINT,
 });
 
 async function recreateIndex() {
@@ -26,6 +26,28 @@ async function recreateIndex() {
 
   await deleteIndex();
   await createIndex();
+}
+
+async function createIfNotExists() {
+  let ready = false;
+
+  while (!ready) {
+    try {
+      ready = await elasticSearchClient.ping();
+    } catch (err) {
+      console.log('WAITING FOR ELASTICSEARCH');
+      await sleep(1000);
+    }
+  }
+
+  console.log('ELASTICSEARCH READY');
+  if (!existsIndex('segment')) {
+    createIndex();
+  }
+}
+
+async function existsIndex(ind) {
+  return await elasticSearchClient.indices.exists({ index: ind });
 }
 
 async function deleteIndex() {
@@ -64,4 +86,8 @@ async function createIndex() {
   console.log('ELASTICSEARCH INDEX MAPPED');
 }
 
-recreateIndex();
+if (require.main === module) {
+  recreateIndex();
+}
+module.exports.recreateIndex = recreateIndex;
+module.exports.createIfNotExists = createIfNotExists;

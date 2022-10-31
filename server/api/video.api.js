@@ -1,5 +1,6 @@
 'use strict';
 
+const elasticSearch = require('@elastic/elasticsearch');
 const Joi = require('joi');
 const Boom = require('@hapi/boom');
 const Chalk = require('chalk');
@@ -21,8 +22,71 @@ module.exports = function (server, mongoose, logger) {
   // Update Video Segments Endpoint
   (function () {
     const Log = logger.bind(Chalk.magenta('Update Video Segments'));
+    Log.note(`Generating Update Video Segments Endpoint, search: ${process.env.ES_ENDPOINT}`);
 
-    Log.note('Generating Update Video Segments Endpoint');
+    const elasticSearchClient = new elasticSearch.Client({
+      node: process.env.ES_ENDPOINT,
+    });
+
+    const getEsTags = function (tags, from, to) {
+      let result = [];
+      tags.forEach((tag) => {
+        if (!tag.isDeleted && tag.rank >= from && tag.rank <= to) {
+          result.push(tag.tag.name);
+        }
+      });
+      return result;
+    };
+
+    // Bulk operation on segments.
+    async function bulkDeleteSegments(all_segments) {
+      elasticSearchClient.helpers.bulk({
+        retries: 3,
+        wait: 50,
+        refreshOnCompletion: true,
+        datasource: all_segments,
+        onDocument(doc) {
+          Log.note('Deleting %j', doc);
+          return { delete: { _index: 'segment', _id: doc.segmentId } };
+        },
+      });
+      const countReponse = await elasticSearchClient.count({ index: 'segment' });
+      console.log(`Have ${countReponse.count} segments after deletion.`);
+    }
+
+    const segementTransform = function (segment) {
+      return {
+        title: segment.title,
+        description: segment.description,
+        start: segment.start,
+        end: segment.end,
+        low_tags: getEsTags(segment.tags, 1, 4),
+        mid_tags: getEsTags(segment.tags, 5, 7),
+        high_tags: getEsTags(segment.tags, 8, 11),
+        videoYtId: segment.videoYtId,
+        captions: segment.captions,
+        segmentId: segment.segmentId,
+      };
+    };
+
+    // Bulk operation on segments.
+    async function bulkInsertSegments(all_segments) {
+      elasticSearchClient.helpers.bulk({
+        retries: 3,
+        wait: 50,
+        refreshOnCompletion: true,
+        datasource: all_segments.flatMap(segementTransform),
+        onDocument(doc) {
+          // Note that the update operation requires you to return
+          // an array, where the first element is the action, while
+          // the second are the document option
+          Log.note('Bulk %j', doc);
+          return [{ update: { _index: 'segment', _id: doc.segmentId } }, { doc_as_upsert: true }];
+        },
+      });
+      const countReponse = await elasticSearchClient.count({ index: 'segment' });
+      console.log(`Have ${countReponse.count} segments after upsert`);
+    }
 
     const updateVideoSegmentsHandler = async function (request, h) {
       try {
@@ -37,6 +101,20 @@ module.exports = function (server, mongoose, logger) {
           }
         }
 
+        // So basically the client does the following:
+        //
+        // Load all segments from a video..
+        // -- Make changes to them.
+        // -- Write them back.
+        //
+        // This is not thread safe, but will hopefully work ok enough.
+        //
+        // Query all existing segments.
+        // Calculate the ones we are adding, updating, deleting based on this segment list.
+        //
+        // We will just add to the shortcuts by just updating elastic search right here, so
+        // we don't have to index offline.
+
         const video = (
           await RestHapi.list({
             model: 'video',
@@ -49,7 +127,6 @@ module.exports = function (server, mongoose, logger) {
         }
 
         const deletedSegments = _.differenceBy(video.segments, segments, 'segmentId');
-
         const newSegments = _.differenceBy(segments, video.segments, 'segmentId')
           .filter((s) => s.pristine === false)
           .map((s) => ({
@@ -111,6 +188,10 @@ module.exports = function (server, mongoose, logger) {
             })
           );
         }
+
+        // Update elastic search..
+        bulkInsertSegments(segments);
+        bulkDeleteSegments(deletedSegments);
 
         const results = await Promise.all(promises);
 

@@ -16,8 +16,8 @@ module.exports = function (server, mongoose, logger) {
     Log.note('Generating Youtube API endpoint');
 
     const key = Config.get('/youtubeApiKey');
-    // We restrict api calls to Tom's youtube channel
-    const channelId = 'UCYwlraEwuFB4ZqASowjoM0g';
+    // TWIM channel.
+    const channelId = 'UClyJoOstQCuCdIyQU080g2w';
 
     const youtubeAPIHandler = async function (request, h) {
       try {
