@@ -412,3 +412,4 @@ test*.json
 config/firebase-admin.json
 .gitsecret/keys/random_seed
 !*.secret
+config/elastic-search
