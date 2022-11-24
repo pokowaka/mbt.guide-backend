@@ -94,7 +94,7 @@ module.exports = function (server, mongoose, logger) {
           });
         } else {
           const elasticSearchClient = new elasticSearch.Client({
-            host: esEndpoint,
+            node: esEndpoint,
           });
 
           response = await new Promise((resolve, reject) => {

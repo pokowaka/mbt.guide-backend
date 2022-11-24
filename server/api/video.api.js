@@ -13,6 +13,7 @@ const errorHelper = require('../utilities/error-helper');
 
 const Config = require('../../config');
 const authStrategy = Config.get('/restHapiConfig/authStrategy');
+const esEndpoint = Config.get('/esEndpoint');
 
 const headersValidation = Joi.object({
   authorization: Joi.string().required(),
@@ -25,7 +26,7 @@ module.exports = function (server, mongoose, logger) {
     Log.note(`Generating Update Video Segments Endpoint, search: ${process.env.ES_ENDPOINT}`);
 
     const elasticSearchClient = new elasticSearch.Client({
-      node: process.env.ES_ENDPOINT,
+      node: esEndpoint,
     });
 
     const getEsTags = function (tags, from, to) {
