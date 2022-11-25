@@ -23,11 +23,9 @@ module.exports = function (server, mongoose, logger) {
   // Update Video Segments Endpoint
   (function () {
     const Log = logger.bind(Chalk.magenta('Update Video Segments'));
-    Log.note(`Generating Update Video Segments Endpoint, search: ${process.env.ES_ENDPOINT}`);
+    Log.note(`Generating Update Video Segments Endpoint, search: ${JSON.stringify(esEndpoint)}`);
 
-    const elasticSearchClient = new elasticSearch.Client({
-      node: esEndpoint,
-    });
+    const elasticSearchClient = new elasticSearch.Client(esEndpoint);
 
     const getEsTags = function (tags, from, to) {
       let result = [];

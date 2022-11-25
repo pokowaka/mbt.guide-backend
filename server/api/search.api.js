@@ -8,10 +8,6 @@ const elasticSearch = require('@elastic/elasticsearch');
 const errorHelper = require('../utilities/error-helper');
 const path = require('path');
 const Config = require('../../config');
-
-const AWS = require('aws-sdk');
-
-const esAws = Config.get('/esAws');
 const esEndpoint = Config.get('/esEndpoint');
 
 module.exports = function (server, mongoose, logger) {
@@ -21,7 +17,7 @@ module.exports = function (server, mongoose, logger) {
 
     const Segment = mongoose.model('segment');
     const Tag = mongoose.model('tag');
-    Log.note('Generating Search Segments endpoint');
+    Log.note('Generating Search Segments endpoint with es:' + JSON.stringify(esEndpoint));
 
     const searchSegmentsHandler = async function (request, h) {
       try {
@@ -45,74 +41,23 @@ module.exports = function (server, mongoose, logger) {
           },
         };
 
-        if (esAws) {
-          // TODO: Grab region from env-vars
-          const region = 'us-east-2';
-          var endpoint = new AWS.Endpoint(esEndpoint);
-          var aws_request = new AWS.HttpRequest(endpoint, region);
+        const elasticSearchClient = new elasticSearch.Client(esEndpoint);
 
-          aws_request.method = 'POST';
-          aws_request.path = path.join(aws_request.path, 'segment', '_search');
-          aws_request.body = JSON.stringify(body);
-          aws_request.headers['host'] = esEndpoint;
-          aws_request.headers['Content-Type'] = 'application/json';
-          // Content-Length is only needed for DELETE requests that include a request
-          // body, but including it for all requests doesn't seem to hurt anything.
-          aws_request.headers['Content-Length'] = Buffer.byteLength(aws_request.body);
-
-          const credentials = new AWS.EnvironmentCredentials('AWS');
-          const signer = new AWS.Signers.V4(aws_request, 'es');
-          signer.addAuthorization(credentials, new Date());
-
-          const client = new AWS.HttpClient();
-          response = await new Promise((resolve, reject) => {
-            client.handleRequest(
-              aws_request,
-              null,
-              (response) => {
-                const { statusCode, statusMessage, headers } = response;
-                let body = '';
-                response.on('data', (chunk) => {
-                  body += chunk;
-                });
-                response.on('end', () => {
-                  const data = {
-                    statusCode,
-                    statusMessage,
-                    headers,
-                  };
-                  if (body) {
-                    data.body = JSON.parse(body);
-                  }
-                  resolve(data);
-                });
-              },
-              (err) => {
-                reject(err);
+        response = await new Promise((resolve, reject) => {
+          elasticSearchClient.search(
+            {
+              index: 'segment',
+              body,
+            },
+            function (error, res, status) {
+              if (error) {
+                reject(error);
+              } else {
+                resolve({ body: res });
               }
-            );
-          });
-        } else {
-          const elasticSearchClient = new elasticSearch.Client({
-            node: esEndpoint,
-          });
-
-          response = await new Promise((resolve, reject) => {
-            elasticSearchClient.search(
-              {
-                index: 'segment',
-                body,
-              },
-              function (error, res, status) {
-                if (error) {
-                  reject(error);
-                } else {
-                  resolve({ body: res });
-                }
-              }
-            );
-          });
-        }
+            }
+          );
+        });
 
         const segmentIds = response.body.hits.hits.map((hit) => hit._id);
 

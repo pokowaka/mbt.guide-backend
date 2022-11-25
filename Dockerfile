@@ -4,16 +4,22 @@ FROM node:18-alpine
 RUN mkdir /backend
 WORKDIR /backend
 
-# Only copy package.json. All other files wil be shared with the host through a volume.
-# NOTE: For a production image, we should COPY all files so that the image is self-sufficient (and only use volumes
-#   for data storage/persistent data).
-COPY ./package.json /backend
-COPY ./package-lock.json /backend
+COPY package.json ./
+COPY package-lock.json ./
+
 # Install node dependencies
 RUN npm ci
+
+COPY ./server ./server
+COPY ./scripts ./scripts
+COPY ./config ./config
+COPY ./utilities ./utilities
+
+COPY ./index.js ./
 
 ARG SERVER_PORT=8080
 # Make the server port available to the world outside this container
 EXPOSE ${SERVER_PORT}
-RUN mkdir /config
-COPY ./config/firebase-admin.json /config
+
+# Run the start script when the container launches
+CMD ["npm", "run", "start:prod"]

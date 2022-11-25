@@ -16,7 +16,7 @@ require('dotenv').config();
   RestHapi.config.loglevel = 'DEBUG';
   const Log = RestHapi.getLogger('add-captions.js');
   try {
-    Log.debug('URI:', restHapiConfig.mongo.URI);
+    Log.debug('Using mongoose:', restHapiConfig.mongo.URI);
     Mongoose.connect(restHapiConfig.mongo.URI);
     RestHapi.config = restHapiConfig;
     RestHapi.config.absoluteModelPath = true;

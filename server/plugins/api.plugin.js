@@ -5,18 +5,7 @@ const path = require('path');
 
 const mongoose = require('mongoose');
 const RestHapi = require('rest-hapi');
-
 const Config = require('../../config');
-
-const awsAccessKeyId = Config.get('/awsAccessKeyId');
-const awsSecretAccessKey = Config.get('/awsSecretAccessKey');
-
-const AWS = require('aws-sdk');
-
-AWS.config.update({
-  accessKeyId: awsAccessKeyId,
-  secretAccessKey: awsSecretAccessKey,
-});
 
 module.exports = {
   plugin: {
@@ -29,8 +18,8 @@ async function register(server, options) {
   try {
     const config = Config.get('/restHapiConfig');
     const mongoSSL = Config.get('/mongoSSL');
-    console.log('mongoSSL:', mongoSSL);
     if (mongoSSL) {
+      console.log('Enabling tls for mongo connections.');
       const certFileBuf = await getMongoCA();
       config.mongo.options = { sslCA: certFileBuf };
     }
@@ -61,17 +50,17 @@ async function getMongoCA() {
     return new Promise((res, rej) => {
       const s3 = new AWS.S3();
       // If S3 change to ours.
-      s3.getObject({ Bucket: 'mbt-guide-private-keys', Key: mongoCertFile }, function (
-        error,
-        certFileBuf
-      ) {
-        if (error != null) {
-          console.error('Error loading mongo cert:', error);
-          rej(error);
-        } else {
-          res(certFileBuf.Body);
+      s3.getObject(
+        { Bucket: 'mbt-guide-private-keys', Key: mongoCertFile },
+        function (error, certFileBuf) {
+          if (error != null) {
+            console.error('Error loading mongo cert:', error);
+            rej(error);
+          } else {
+            res(certFileBuf.Body);
+          }
         }
-      });
+      );
     });
   }
 }

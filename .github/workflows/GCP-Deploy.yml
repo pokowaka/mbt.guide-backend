@@ -40,12 +40,14 @@ jobs:
         run: |
           echo $GCE_ENV_DOCKER | base64 --decode > .env-docker
           echo $GCE_CONFIG_FIREBASE_ADMIN_JSON | base64 --decode > ./config/firebase-admin.json
+          echo $GCE_CONFIG_ENV_YAML | base64 --decode > .env.yaml
+          echo
 
       - name: Build Docker image
-        run: source .env-docker && docker build -f Dockerfile.prod . -t $IMAGE_NAME
+        run: docker build -f Dockerfile.prod . -t $IMAGE_NAME
 
       - name: Push Docker image
         run: docker push $IMAGE_NAME
 
       - name: Deploy Docker image
-        run: gcloud run deploy twim-knowledge-350317 --image $IMAGE_NAME --region us-central1 --platform managed
+        run: gcloud run deploy twim-knowledge-350317 --image $IMAGE_NAME --region us-central1 --platform managed --env-vars-file=.env.yaml

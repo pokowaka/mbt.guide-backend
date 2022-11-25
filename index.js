@@ -15,7 +15,7 @@ const startServer = async function () {
     const server = await Glue.compose(manifest, composeOptions);
 
     // Let's start with initializing elastic search..
-    await reindex.createIfNotExists();
+    // await reindex.createIfNotExists();
 
     await server.start();
 

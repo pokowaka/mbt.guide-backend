@@ -21,26 +21,7 @@ const firebase = require('firebase/app');
 require('firebase/auth');
 require('firebase/firestore');
 const admin = require('firebase-admin');
-const AWS = require('aws-sdk');
 
-// To configure firebase for access
-// const s3 = new AWS.S3();
-// s3.getObject({ Bucket: 'mbt-guide-private-keys', Key: 'mbt-guide-b41e8f3aa8b4.json' }, function(
-//   error,
-//   data
-// ) {
-//   if (error != null) {
-//     console.error('Error loading firebase admin cert:', error);
-//   } else {
-//     const serviceAccount = JSON.parse(data.Body.toString());
-//     admin.initializeApp({
-//       credential: admin.credential.cert(serviceAccount),
-//       databaseURL: 'https://mbt-guide-d9b1b.firebaseio.com',
-//     });
-//   }
-// });
-
-console.log(admin);
 admin.initializeApp({
   credential: admin.credential.applicationDefault(),
   //	  databaseURL: 'https://<DATABASE_NAME>.firebaseio.com'

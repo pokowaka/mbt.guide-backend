@@ -1,14 +1,13 @@
 const elasticSearch = require('@elastic/elasticsearch');
-
+const Config = require('../config');
+const esEndpoint = Config.get('/esEndpoint');
 require('dotenv').config();
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-const elasticSearchClient = new elasticSearch.Client({
-  node: process.env.ES_ENDPOINT,
-});
+const elasticSearchClient = new elasticSearch.Client(esEndpoint);
 
 async function recreateIndex() {
   let ready = false;
