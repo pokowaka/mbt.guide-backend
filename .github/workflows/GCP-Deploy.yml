@@ -2,9 +2,9 @@ name: Docker
 
 on:
   push:
-    branches: [twim-deploy]
+    branches: [master]
   pull_request:
-    branches: [twim-deploy]
+    branches: [master]
 
 jobs:
   deploy:
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          ref: twim-deploy
+          ref: master
 
       - id: "auth"
         name: "Authenticate to Google cloud."
